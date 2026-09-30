@@ -5,6 +5,7 @@ import re
 from pathlib import Path
 
 import pytest
+import yaml
 
 
 SCRIPT = Path(__file__).parents[2] / "scripts" / "release" / "validate_release.py"
@@ -77,18 +78,43 @@ def test_release_workflow_checksums_match_flat_github_release_assets() -> None:
 
 
 def test_citation_metadata_is_validated_in_ci_and_release() -> None:
-    citation = CITATION.read_text(encoding="utf-8")
+    citation = yaml.safe_load(CITATION.read_text(encoding="utf-8"))
     manifest = (ROOT / "MANIFEST.in").read_text(encoding="utf-8")
     distribution_validator = (
         ROOT / "scripts" / "ci" / "validate_distribution.py"
     ).read_text(encoding="utf-8")
 
-    assert 'version: "0.9.4"' in citation
-    assert "doi:" not in citation
-    assert 'orcid: "https://orcid.org/0009-0001-4675-601X"' in citation
-    assert 'orcid: "https://orcid.org/0000-0003-3072-2189"' in citation
-    assert 'orcid: "https://orcid.org/0000-0003-4776-2822"' in citation
-    assert "preferred-citation:" not in citation
+    assert citation["type"] == "software"
+    assert citation["title"] == "openAMUNDSEN-DA"
+    assert citation["version"] == "0.9.4"
+    assert "doi" not in citation
+    authors = [
+        (author["given-names"], author["family-names"], author["orcid"])
+        for author in citation["authors"]
+    ]
+    assert authors == [
+        ("Franz", "Wagner", "https://orcid.org/0009-0001-4675-601X"),
+        ("Erwin", "Rottler", "https://orcid.org/0000-0003-3072-2189"),
+        ("Ulrich", "Strasser", "https://orcid.org/0000-0003-4776-2822"),
+    ]
+    preprint = citation["preferred-citation"]
+    assert preprint["type"] == "article"
+    assert preprint["title"] == (
+        "openAMUNDSEN-DA v0.9: an ensemble based snow data assimilation framework "
+        "for the open source snow hydrological model openAMUNDSEN"
+    )
+    assert [
+        (author["given-names"], author["family-names"], author["orcid"])
+        for author in preprint["authors"]
+    ] == authors
+    assert preprint["journal"] == "EGUsphere [preprint]"
+    assert preprint["year"] == 2026
+    assert preprint["month"] == 9
+    assert preprint["date-published"] == "2026-09-29"
+    assert preprint["doi"] == "10.5194/egusphere-2026-4575"
+    assert preprint["url"] == (
+        "https://egusphere.copernicus.org/preprints/2026/egusphere-2026-4575/"
+    )
     assert not (ROOT / ".zenodo.json").exists()
     assert "include CITATION.cff" in manifest
     assert '"CITATION.cff"' in distribution_validator
