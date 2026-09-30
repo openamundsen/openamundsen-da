@@ -7,9 +7,10 @@ hydrological model [openAMUNDSEN](https://github.com/openamundsen/openamundsen).
 It prepares configured snow observations, executes sequential ensemble updates
 and writes reproducible diagnostics and compact gridded results.
 
-The project is a v0.9 research preview. A scientific manuscript describing the
-openAMUNDSEN-DA framework and its Rofental application is in preparation. This
-repository documents the software interface and operational workflow.
+The project is a v0.9 research preview. The openAMUNDSEN-DA framework and its
+Rofental application are described in the
+[EGUsphere preprint by Wagner et al. (2026)](https://doi.org/10.5194/egusphere-2026-4575).
+This repository documents the software interface and operational workflow.
 
 ## Documentation
 
@@ -114,6 +115,18 @@ bash scripts/ci/run_integration_tests_subdomain.sh
 ```
 
 See [tests/README.md](tests/README.md) for the exact validation contracts.
+
+## Citation
+
+If you use openAMUNDSEN-DA in your work, please cite the preprint and the archived
+software version you used. Find release records through the
+[openAMUNDSEN-DA concept DOI](https://doi.org/10.5281/zenodo.21519388).
+
+Wagner, F., Rottler, E., and Strasser, U.: openAMUNDSEN-DA v0.9: an ensemble based
+snow data assimilation framework for the open source snow hydrological model
+openAMUNDSEN, EGUsphere [preprint],
+[https://doi.org/10.5194/egusphere-2026-4575](https://doi.org/10.5194/egusphere-2026-4575),
+2026.
 
 ## License
 

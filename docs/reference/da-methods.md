@@ -8,7 +8,8 @@ nav_order: 4
 # Data Assimilation Implementation
 
 This page identifies the implemented software stages and artifacts. Detailed
-scientific formulation and interpretation are outside its scope.
+scientific formulation and the Rofental application are described in the
+[EGUsphere preprint by Wagner et al. (2026)](https://doi.org/10.5194/egusphere-2026-4575).
 
 ## Event sequence
 

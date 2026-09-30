@@ -14,6 +14,8 @@ has_children: true
 - [Package Structure]({{ site.baseurl }}{% link reference/package-structure.md %})
   describes public and internal module boundaries.
 - [Data Assimilation Implementation]({{ site.baseurl }}{% link reference/da-methods.md %})
-  maps technical stages to outputs without repeating the scientific manuscript.
+  maps technical stages to outputs. Scientific formulation and the Rofental
+  application are described in the
+  [EGUsphere preprint by Wagner et al. (2026)](https://doi.org/10.5194/egusphere-2026-4575).
 - [Releases and Distribution]({{ site.baseurl }}{% link release.md %}) lists the
   public distribution channels.

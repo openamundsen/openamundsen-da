@@ -28,8 +28,9 @@ observations, prepares deterministic assimilation sequences, executes an
 ensemble particle-filter workflow and validates the resulting tables, grids,
 plots, maps and report.
 
-The documentation is deliberately technical. A scientific manuscript describing
-the openAMUNDSEN-DA framework and its Rofental application is in preparation.
+The documentation is deliberately technical. The openAMUNDSEN-DA framework and
+its Rofental application are described in the
+[EGUsphere preprint by Wagner et al. (2026)](https://doi.org/10.5194/egusphere-2026-4575).
 This repository documents the software interface and operational workflow.
 
 ![openAMUNDSEN-DA technical workflow from mounted setup inputs through observation summaries and prepared steps to validated results]({{ site.baseurl }}/assets/images/diagrams/openamundsen-da-workflow.svg)
@@ -53,6 +54,18 @@ observations, prepares inspectable event inputs and writes a validated result se
   shipped Rofental example.
 - [How to Use]({{ '/tutorial/' | relative_url }}) is the reviewed, continuous
   Rofental walkthrough.
+
+## Citation
+
+If you use openAMUNDSEN-DA in your work, please cite the preprint and the archived
+software version you used. Find release records through the
+[openAMUNDSEN-DA concept DOI](https://doi.org/10.5281/zenodo.21519388).
+
+Wagner, F., Rottler, E., and Strasser, U.: openAMUNDSEN-DA v0.9: an ensemble based
+snow data assimilation framework for the open source snow hydrological model
+openAMUNDSEN, EGUsphere [preprint],
+[https://doi.org/10.5194/egusphere-2026-4575](https://doi.org/10.5194/egusphere-2026-4575),
+2026.
 
 ## License and availability
 
