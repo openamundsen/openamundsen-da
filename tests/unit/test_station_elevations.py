@@ -177,8 +177,8 @@ def test_viridis_palette_regular_ticks_and_full_frames(stations):
             assert np.allclose(np.diff(ticks), np.diff(ticks)[0])
             assert child.get_position().y0 == pytest.approx(host.get_position().y0)
             assert child.get_position().y1 == pytest.approx(host.get_position().y1)
-        assert FORCING_STATION_COLOR == "#fde725"
-        assert SNOW_STATION_COLOR == "#453782"
+        assert FORCING_STATION_COLOR == "#dce317"
+        assert SNOW_STATION_COLOR == "#32648e"
     finally:
         plt.close(fig)
 

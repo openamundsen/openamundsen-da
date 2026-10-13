@@ -504,8 +504,9 @@ alignment, `width_cm` controls the final tightly cropped export width instead of
 `target_size_in`. Canvas dimensions scale proportionally to preserve map aspects;
 there is no PNG resampling or padding. The height follows the decorated content.
 Explicit row views spanned by a panel must have identical view settings.
-Set `layout.column_gap_in` to a positive physical gap in inches (default `0.82`)
-for frame layouts. A smaller gap can reclaim space when the DEM uses
+Set `layout.column_gap_in` and `layout.row_gap_in` to positive physical gaps in inches
+(defaults `0.82` and `0.62`)
+for frame layouts. Smaller gaps enlarge the frames and can reclaim space when the DEM uses
 `legend: horizontal` below its frame. Station-count subtitles on the same bottom
 row align with the horizontal colorbar center. Native layout spacing is unchanged.
 
@@ -520,11 +521,26 @@ of a detail panel named `domain` in the same recipe. Native overview colors and
 internal boundaries remain the defaults. In frame layouts the overview expands
 its geographic extent to fit its frame while retaining native country labels.
 
-Forcing stations use viridis yellow (`#fde725`); snow stations use viridis purple
-(`#453782`) throughout station maps, split symbols, legends and elevation bars.
+Forcing stations use yellow (`#dce317`); snow stations use blue
+(`#32648e`) throughout station maps, split symbols, legends and elevation bars.
 Other assimilation colors are unchanged. Station-elevation count axes use
 regular integer ticks; headings retain exact record counts. An inside
 `station_categories` legend can use `source: networks` to omit the holdout key.
+Add `{kind: subdomain_boundary, placement: inside, anchor: top_left}` to the
+same legend to show the native boundary line and halo. Combined network and
+boundary entries have equal row spacing and height based on their actual count.
+Panel options `inside_legend_alpha` (default `0.70`, range 0–1) and
+`inside_legend_offset_x` (default `0`, fraction of panel width shifted right)
+control the white background and position. An offset placing the legend outside
+the panel is rejected. For example:
+
+```yaml
+inside_legend_alpha: 0.94
+inside_legend_offset_x: 0.10
+legend_items:
+  - {kind: station_categories, source: networks, placement: inside, anchor: top_left}
+  - {kind: subdomain_boundary, placement: inside, anchor: top_left}
+```
 
 Frame-aligned exports also write `<output_name>.layout.json`, recording final
 frame bounds, chart bounds, geographic extents and figure dimensions for validation.

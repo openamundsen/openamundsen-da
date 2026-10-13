@@ -45,6 +45,7 @@ from openamundsen_da.methods.viz.maps.annotations import (
     draw_panel_extras,
     draw_patch_entry,
     draw_station_categories,
+    draw_subdomain_entry,
     draw_station_entry,
     overview_label_box_size_in,
     panel_date,
@@ -3559,8 +3560,10 @@ def render_legend_panel(ax, *, panel: MapPanelSpec, artifacts: dict[str, dict[st
             y = draw_heading(ax, y=y, text=str(item.label))
         elif item.kind == "station_symbol":
             y = draw_station_entry(ax, y=y, label=str(item.label))
+        elif item.kind == "subdomain_boundary":
+            y = draw_subdomain_entry(ax, y=y, label=item.label or "Subdomain boundary")
         elif item.kind == "station_categories":
-            y = draw_station_categories(ax, y=y)
+            y = draw_station_categories(ax, y=y, include_holdout=item.source != "networks")
         elif item.kind == "source_legend":
             if item.label:
                 y = draw_heading(ax, y=y, text=str(item.label))

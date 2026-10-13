@@ -3777,7 +3777,7 @@ def test_overview_roi_polygon_uses_reference_red() -> None:
 
 
 def test_map_station_marker_uses_viridis_forcing_color() -> None:
-    assert _STATION_COLOR == "#fde725"
+    assert _STATION_COLOR == "#dce317"
 
 
 def test_wet_snow_reference_colors_follow_example_palette() -> None:

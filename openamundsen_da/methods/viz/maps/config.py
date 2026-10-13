@@ -55,7 +55,7 @@ SUPPORTED_WET_SNOW_ELEVATION_FRACTION_SOURCES = {
     "posterior_probability",
 }
 SUPPORTED_UNCERTAINTY_OBSERVATIONS = {"scf", "wet_snow"}
-SUPPORTED_LEGEND_ITEM_KINDS = {"heading", "station_categories", "station_symbol", "source_legend", "scale_bar"}
+SUPPORTED_LEGEND_ITEM_KINDS = {"subdomain_boundary", "heading", "station_categories", "station_symbol", "source_legend", "scale_bar"}
 SUPPORTED_LEGEND_ITEM_PLACEMENTS = {"below", "inside"}
 SUPPORTED_LEGEND_ITEM_ANCHORS = {"top_left", "top_right", "bottom_left", "bottom_right"}
 SUPPORTED_PANEL_LEGEND_LAYOUTS = {"horizontal", "vertical"}
@@ -94,6 +94,7 @@ class LayoutSpec:
     alignment: str = "native"
     width_cm: float = 17.4
     column_gap_in: float = 0.82
+    row_gap_in: float = 0.62
 
 
 @dataclass(frozen=True)
@@ -140,6 +141,8 @@ class MapPanelSpec:
     items: tuple[LegendItemSpec, ...] = ()
     below_items: tuple[LegendItemSpec, ...] = ()
     legend_items: tuple[LegendItemSpec, ...] = ()
+    inside_legend_alpha: float = 0.70
+    inside_legend_offset_x: float = 0.0
     show_colorbar: bool | None = None
     show_scalebar: bool | None = None
     show_grid: bool | None = None
@@ -412,7 +415,7 @@ def _parse_layout(value: object, *, context: str) -> LayoutSpec:
     alignment = str(mapping.get("alignment", "native"))
     if alignment not in {"native", "frames"}:
         raise ValueError(f"{context}.alignment must be native or frames")
-    return LayoutSpec(column_gap_in=_optional_positive_float(mapping.get("column_gap_in"), context=f"{context}.column_gap_in") or 0.82, nrows=nrows, ncols=ncols, alignment=alignment, width_cm=_optional_positive_float(mapping.get("width_cm"), context=f"{context}.width_cm") or 17.4, width_ratios=width_ratios, height_ratios=height_ratios)
+    return LayoutSpec(row_gap_in=_optional_positive_float(mapping.get("row_gap_in"), context=f"{context}.row_gap_in") or 0.62, column_gap_in=_optional_positive_float(mapping.get("column_gap_in"), context=f"{context}.column_gap_in") or 0.82, nrows=nrows, ncols=ncols, alignment=alignment, width_cm=_optional_positive_float(mapping.get("width_cm"), context=f"{context}.width_cm") or 17.4, width_ratios=width_ratios, height_ratios=height_ratios)
 
 
 def _parse_row_views(value: object, *, context: str, nrows: int) -> tuple[MapRowViewSpec, ...]:
@@ -440,6 +443,13 @@ def _parse_row_views(value: object, *, context: str, nrows: int) -> tuple[MapRow
             )
         )
     return tuple(views)
+
+
+def _unit_interval(value: object, *, default: float, context: str) -> float:
+    number = default if value is None else float(value)
+    if not math.isfinite(number) or not 0 <= number <= 1:
+        raise ValueError(f"{context} must be between 0 and 1")
+    return number
 
 
 def _parse_panel(value: object, *, context: str) -> MapPanelSpec:
@@ -488,6 +498,8 @@ def _parse_panel(value: object, *, context: str) -> MapPanelSpec:
             context=f"{context}.below_items",
             default_placement="below",
         ),
+        inside_legend_alpha=_unit_interval(mapping.get("inside_legend_alpha"), default=0.70, context=f"{context}.inside_legend_alpha"),
+        inside_legend_offset_x=_unit_interval(mapping.get("inside_legend_offset_x"), default=0.0, context=f"{context}.inside_legend_offset_x"),
         legend_items=_parse_legend_items(
             mapping.get("legend_items"),
             context=f"{context}.legend_items",

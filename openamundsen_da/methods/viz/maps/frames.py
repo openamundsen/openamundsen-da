@@ -23,7 +23,7 @@ def configure_frames(fig, recipe, row_extents):
     heights = recipe.layout.height_ratios or (1.0,) * recipe.layout.nrows
     width = recipe.layout.width_cm / 2.54
     left, right, bottom, top = 0.46, 0.13, 0.43, 0.34
-    column_gap, row_gap = recipe.layout.column_gap_in, 0.62
+    column_gap, row_gap = recipe.layout.column_gap_in, recipe.layout.row_gap_in
     unit_width = (width - left - right - column_gap * (len(widths) - 1)) / sum(widths)
     reference_width = unit_width * sum(
         widths[reference.col : reference.col + reference.colspan]

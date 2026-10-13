@@ -236,12 +236,108 @@ def test_horizontal_bar_aligns_count_subtitle_after_tight_export(tmp_path):
 def test_frame_column_gap_is_opt_in():
     from openamundsen_da.methods.viz.maps.config import _parse_layout
 
-    assert _parse_layout({"nrows": 1, "ncols": 1}, context="layout").column_gap_in == 0.82
+    assert (
+        _parse_layout({"nrows": 1, "ncols": 1}, context="layout").column_gap_in == 0.82
+    )
     assert (
         _parse_layout(
-            {"nrows": 1, "ncols": 1, "alignment": "frames", "column_gap_in": 0.35}, context="layout"
+            {"nrows": 1, "ncols": 1, "alignment": "frames", "column_gap_in": 0.35},
+            context="layout",
         ).column_gap_in
         == 0.35
     )
     with pytest.raises(ValueError):
         _parse_layout({"nrows": 1, "ncols": 1, "column_gap_in": -1}, context="layout")
+
+
+def test_compact_network_and_boundary_legend_has_even_rows_and_configured_background():
+    fig, ax = plt.subplots(figsize=(6, 4))
+    try:
+        panel = MapPanelSpec(
+            kind="dem",
+            row=0,
+            col=0,
+            inside_legend_alpha=0.94,
+            inside_legend_offset_x=0.10,
+            legend_items=(
+                LegendItemSpec(
+                    kind="station_categories", source="networks", placement="inside"
+                ),
+                LegendItemSpec(kind="subdomain_boundary", placement="inside"),
+            ),
+        )
+        annotations.draw_panel_inside_items(
+            ax,
+            panel=panel,
+            artifacts={},
+            legend_source_handles_getter=lambda *args: [],
+        )
+        fig.canvas.draw()
+        legend = ax.child_axes[-1]
+        assert [text.get_text() for text in legend.texts] == [
+            "Forcing station",
+            "Snow observation station",
+            "Forcing + snow station",
+            "Subdomain boundary",
+        ]
+        assert [text.get_position()[1] for text in legend.texts] == pytest.approx(
+            [0.875, 0.625, 0.375, 0.125]
+        )
+        assert legend.get_facecolor() == pytest.approx((1, 1, 1, 0.94))
+        offset = (
+            legend.get_position().x0 - ax.get_position().x0
+        ) / ax.get_position().width
+        assert offset == pytest.approx(0.126)
+        assert legend.lines[0].get_color() == panel_renderers._SUBDOMAIN_BOUNDARY_COLOR
+        assert (
+            legend.lines[0].get_linewidth() == panel_renderers._SUBDOMAIN_BOUNDARY_WIDTH
+        )
+        assert len(legend.lines[0].get_path_effects()) == 2
+    finally:
+        plt.close(fig)
+
+
+def test_smaller_row_gap_enlarges_both_right_frames_without_distorting_detail():
+    from dataclasses import replace
+    from openamundsen_da.methods.viz.maps.config import LayoutSpec
+    from openamundsen_da.methods.viz.maps.frames import configure_frames
+
+    fig = plt.figure()
+    recipe = SimpleNamespace(
+        layout=LayoutSpec(nrows=2, ncols=2, width_ratios=(2, 1), alignment="frames"),
+        panels=(
+            MapPanelSpec(kind="dem", row=0, col=0, rowspan=2),
+            MapPanelSpec(kind="overview", row=0, col=1),
+            MapPanelSpec(kind="station_elevations", row=1, col=1),
+        ),
+    )
+    try:
+        before = configure_frames(fig, recipe, {0: (0, 2, 0, 1.4)})
+        recipe.layout = replace(recipe.layout, row_gap_in=0.30)
+        after = configure_frames(fig, recipe, {0: (0, 2, 0, 1.4)})
+        assert after[0] == pytest.approx(before[0])
+        assert after[1][3] > before[1][3]
+        assert after[2][3] == pytest.approx(after[1][3])
+        assert after[0][1] == pytest.approx(after[2][1])
+    finally:
+        plt.close(fig)
+
+
+@pytest.mark.parametrize("key", ["inside_legend_alpha", "inside_legend_offset_x"])
+def test_inside_legend_controls_reject_invalid_values(key):
+    from openamundsen_da.methods.viz.maps.config import _parse_panel
+
+    with pytest.raises(ValueError, match="between 0 and 1"):
+        _parse_panel({"kind": "dem", "row": 0, "col": 0, key: 1.1}, context="panel")
+
+
+def test_frame_row_gap_defaults_and_validation():
+    from openamundsen_da.methods.viz.maps.config import _parse_layout
+
+    base = {"nrows": 2, "ncols": 2}
+    assert _parse_layout(base, context="layout").row_gap_in == 0.62
+    assert (
+        _parse_layout({**base, "row_gap_in": 0.34}, context="layout").row_gap_in == 0.34
+    )
+    with pytest.raises(ValueError):
+        _parse_layout({**base, "row_gap_in": -0.1}, context="layout")
