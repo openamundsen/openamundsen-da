@@ -231,41 +231,36 @@ def _draw_station_category_entry(ax, *, y: float, kind: str, label: str) -> floa
     return y - 0.23
 
 
-def draw_station_categories(ax, *, y: float, include_holdout: bool = True) -> float:
-    """Draw the fixed station-source and role legend."""
+def station_category_entries(*, include_holdout: bool = True):
+    """Return exactly the source/role entries requested by the legend."""
     entries = (
         ("forcing", "Forcing station"),
         ("snow", "Snow observation station"),
         ("both", "Forcing + snow station"),
         ("holdout", "Holdout snow station"),
     )
-    for kind, label in entries:
-        if kind == "holdout" and not include_holdout:
-            continue
-        y = _draw_station_category_entry(ax, y=y, kind=kind, label=label)
+    return entries if include_holdout else entries[:-1]
+
+
+def draw_station_categories(ax, *, y: float, include_holdout: bool = True, row_step: float = 0.23) -> float:
+    """Draw the requested station-source and role legend."""
+    for kind, label in station_category_entries(include_holdout=include_holdout):
+        _draw_station_category_entry(ax, y=y, kind=kind, label=label)
+        y -= row_step
     return y
 
 
-def draw_station_categories_below(ax, *, y: float) -> float:
-    """Draw the station categories as a compact two-column below-panel key."""
-    rows = (
-        (("forcing", "Forcing station"), ("snow", "Snow obs. station")),
-        (("both", "Forcing + snow station"), ("holdout", "Holdout snow station")),
-    )
-    for row, entries in enumerate(rows):
-        row_y = y - 0.55 * row
-        for column, (kind, label) in enumerate(entries):
-            marker_x = 0.055 + 0.50 * column
-            label_x = 0.105 + 0.50 * column
-            _draw_station_category_entry_at(
-                ax,
-                y=row_y,
-                kind=kind,
-                label=label,
-                marker_x=marker_x,
-                label_x=label_x,
-            )
-    return y - 1.10
+def draw_station_categories_below(ax, *, y: float, include_holdout: bool = True) -> float:
+    """Draw the requested categories as a compact two-column below-panel key."""
+    entries = station_category_entries(include_holdout=include_holdout)
+    for index, (kind, label) in enumerate(entries):
+        row, column = divmod(index, 2)
+        _draw_station_category_entry_at(
+            ax, y=y - 0.55 * row, kind=kind,
+            label=label.replace("Snow observation", "Snow obs."),
+            marker_x=0.055 + 0.50 * column, label_x=0.105 + 0.50 * column,
+        )
+    return y - 0.55 * ((len(entries) + 1) // 2)
 
 
 def _draw_station_category_entry_at(
@@ -316,7 +311,7 @@ def panel_below_item_units(item: LegendItemSpec) -> float:
     if item.kind == "station_symbol":
         return 0.40
     if item.kind == "station_categories":
-        return 2.60
+        return 0.65 * len(station_category_entries(include_holdout=item.source != "networks"))
     return 1.0
 
 
@@ -431,9 +426,9 @@ def _draw_legend_items_on_axis(
             y = draw_station_entry(ax, y=y, label=str(item.label))
         elif item.kind == "station_categories":
             if context_label == "below-panel":
-                y = draw_station_categories_below(ax, y=y)
+                y = draw_station_categories_below(ax, y=y, include_holdout=item.source != "networks")
             else:
-                y = draw_station_categories(ax, y=y, include_holdout=item.source != "networks")
+                y = draw_station_categories(ax, y=y, include_holdout=item.source != "networks", row_step=1.0 / len(station_category_entries(include_holdout=item.source != "networks")) if context_label == "inside-panel" and len(items) == 1 else 0.23)
         elif item.kind == "source_legend":
             if item.label:
                 y = draw_heading(ax, y=y, text=str(item.label))
@@ -480,7 +475,7 @@ def _inside_legend_width(
                 _legend_label_width_in(item.label, fontsize=_STATION_LEGEND_FONT_SIZE, text_x=_STATION_LABEL_X),
             )
         elif item.kind == "station_categories":
-            for label in ("Forcing station", "Snow observation station", "Forcing + snow station", "Holdout snow station"):
+            for _, label in station_category_entries(include_holdout=item.source != "networks"):
                 required_width_in = max(
                     required_width_in,
                     _legend_label_width_in(label, fontsize=_STATION_LEGEND_FONT_SIZE, text_x=_STATION_LABEL_X),
@@ -520,6 +515,9 @@ def _inside_legend_bounds(
         _INSIDE_LEGEND_MAX_HEIGHT,
         max(_INSIDE_LEGEND_MIN_HEIGHT, row_units * _INSIDE_LEGEND_UNIT_HEIGHT),
     )
+    if len(items) == 1 and items[0].kind == "station_categories":
+        count = len(station_category_entries(include_holdout=items[0].source != "networks"))
+        height = count * 1.5 * _STATION_LEGEND_FONT_SIZE / 72.0 / axis_height_inches(ax)
     token = str(anchor or "top_left")
     x0 = _INSIDE_LEGEND_ANCHOR_PAD if token.endswith("left") else 1.0 - width - _INSIDE_LEGEND_ANCHOR_PAD
     y0 = 1.0 - height - _INSIDE_LEGEND_ANCHOR_PAD if token.startswith("top") else _INSIDE_LEGEND_ANCHOR_PAD
@@ -566,6 +564,9 @@ def draw_panel_inside_items(
         for spine in legend_ax.spines.values():
             spine.set_visible(False)
         y = 0.86 if any(item.kind == "station_categories" for item in items) else (0.5 if len(items) == 1 else 0.88)
+        if len(items) == 1 and items[0].kind == "station_categories":
+            count = len(station_category_entries(include_holdout=items[0].source != "networks"))
+            y = 1.0 - 0.5 / count
         _draw_legend_items_on_axis(
             legend_ax,
             items=items,

@@ -35,7 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   keeping scientific manifests, weights, logs and compact consumers durable.
 
 ### Changed
-- Use viridis purple/teal for forcing/snow station symbols and elevation bars;
+- Use viridis green/yellow for forcing/snow station symbols and elevation bars;
   show regular integer station-count ticks.
 - Derive live project-size telemetry from storage-ledger materialized/removed
   byte counters after one baseline scan, downsample growing PNG histories,
@@ -98,6 +98,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the accepted leaf project YAMLs.
 
 ### Fixed
+- Export aligned map frames with tight decorated bounds at the requested width
+  without stretching maps; remove unused station-legend rows and center vertical
+  colorbar units with physical spacing while retaining endpoint labels.
+- Draw snow and colocated station markers above forcing-only markers independent
+  of inventory order.
 - Upgrade the pinned container base's Perl package to Debian's security-fixed
   version `5.36.0-7+deb12u4` to address critical vulnerabilities detected by CI.
 - Keep large compact-retention batches fail-closed without rehashing the same

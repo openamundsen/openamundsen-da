@@ -536,6 +536,7 @@ def _render_panel(
             tick_size=_layout_module._TICK_SIZE,
             show_grid=panel.show_grid if panel.show_grid is not None else True,
             fit_frame=panel.fit_frame,
+            show_elevation_label=panel.show_elevation_label,
         )
         for child in children:
             _layout_module.register_child_axes(ax, child)
@@ -768,9 +769,9 @@ def render_map_recipe(
         row_axes[int(panel.row)].append(ax)
         key = panel.name or f"panel_{idx}"
 
-        if panel.kind == "overview" and panel.extent_panel:
-            reference = next(p for p in recipe.panels if p.name == panel.extent_panel)
-            artifacts[key] = _render_overview_panel(ax, panel=panel, context=context, label=panel_labels[idx], defaults=recipe.defaults, detail_extent=row_extents[reference.row])
+        if panel.kind == "overview" and (panel.extent_panel or panel.extent_source):
+            detail_extent = _grid_extent(context) if panel.extent_source == "model_grid" else row_extents[next(p.row for p in recipe.panels if p.name == panel.extent_panel)]
+            artifacts[key] = _render_overview_panel(ax, panel=panel, context=context, label=panel_labels[idx], defaults=recipe.defaults, detail_extent=detail_extent)
         elif panel.kind == "colorbar":
             artifacts[key] = _render_colorbar_panel(ax, panel=panel, artifacts=artifacts)
         elif panel.kind == "legend":
@@ -822,10 +823,11 @@ def render_map_recipe(
             title_artist.set_y(min(1.03, top_row + _figure_title_gap(fig, populated_axes)))
     force_figure_text_black(fig, axes)
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    if frame_positions is None:
-        save_figure_png(fig, output_path, bbox_inches="tight", pad_inches=0.0, target_size_in=target_size_in)
-    else:
-        save_figure_png(fig, output_path)
+    save_figure_png(
+        fig, output_path, bbox_inches="tight", pad_inches=0.0,
+        target_size_in=target_size_in,
+        target_width_in=recipe.layout.width_cm / 2.54 if frame_positions is not None else None,
+    )
     if frame_positions is not None:
         fig.canvas.draw()
         geometry = {"figure_size_inches": fig.get_size_inches().tolist(), "panels": []}
@@ -837,7 +839,7 @@ def render_map_recipe(
                 "bounds": list(ax.get_position().bounds),
                 "extent": artifact.get("extent", row_extents[panel.row]) if panel.kind != "station_elevations" else None,
                 "chart_bounds": [list(child.get_position().bounds) for child in artifact.get("axes", ())],
-                "detail_extent": row_extents[next(p.row for p in recipe.panels if p.name == panel.extent_panel)] if panel.extent_panel else None,
+                "detail_extent": _grid_extent(context) if panel.extent_source == "model_grid" else (row_extents[next(p.row for p in recipe.panels if p.name == panel.extent_panel)] if panel.extent_panel else None),
             })
         output_path.with_suffix(".layout.json").write_text(json.dumps(geometry, indent=2) + "\n")
     plt.close(fig)

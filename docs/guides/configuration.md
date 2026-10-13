@@ -500,7 +500,9 @@ occupies the left column; an overview and station-elevation panel occupy the
 right rows. The canvas height follows the first detail map's geographic aspect,
 with physical space reserved for titles, colorbars and axis labels. Maps retain
 undistorted coordinates. `alignment: native` remains the default. With frame
-alignment, `width_cm` controls export size instead of `target_size_in`.
+alignment, `width_cm` controls the final tightly cropped export width instead of
+`target_size_in`. Canvas dimensions scale proportionally to preserve map aspects;
+there is no PNG resampling or padding. The height follows the decorated content.
 Explicit row views spanned by a panel must have identical view settings.
 
 For DEM panels, `field_extent: full` shows valid elevation pixels outside the
@@ -514,11 +516,21 @@ of a detail panel named `domain` in the same recipe. Native overview colors and
 internal boundaries remain the defaults. In frame layouts the overview expands
 its geographic extent to fit its frame while retaining native country labels.
 
-Forcing stations use viridis purple (`#440154`); snow stations use viridis teal
-(`#22a884`) throughout station maps, split symbols, legends and elevation bars.
+Forcing stations use viridis green (`#22a884`); snow stations use viridis yellow
+(`#fde725`) throughout station maps, split symbols, legends and elevation bars.
 Other assimilation colors are unchanged. Station-elevation count axes use
 regular integer ticks; headings retain exact record counts. An inside
 `station_categories` legend can use `source: networks` to omit the holdout key.
 
 Frame-aligned exports also write `<output_name>.layout.json`, recording final
 frame bounds, chart bounds, geographic extents and figure dimensions for validation.
+
+Use `extent_source: model_grid` on an overview to draw the actual model-grid
+rectangle independently of display padding. It is mutually exclusive with
+`extent_panel`. Set `show_elevation_label: false` on a station-elevation panel
+to omit its y-axis title while retaining numeric ticks and metadata elevations.
+
+Snow and colocated station symbols render above forcing-only symbols; holdouts
+retain the highest station layer. Station category legends size their rows from
+the selected entries. Vertical colorbar units are centered three points above
+the bar, with endpoint tick labels retained.

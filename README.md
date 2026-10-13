@@ -140,4 +140,4 @@ commercial use subject to the license terms.
 
 Map recipes support opt-in aligned detail/overview/chart frames and full-extent
 DEM backgrounds. Forcing and snow station symbols and elevation bars share a
-viridis purple/teal palette; see the [map recipe guide](docs/guides/configuration.md#aligned-detail-map-overview-and-station-charts).
+viridis green/yellow palette; see the [map recipe guide](docs/guides/configuration.md#aligned-detail-map-overview-and-station-charts).

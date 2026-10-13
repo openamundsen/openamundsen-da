@@ -131,6 +131,8 @@ class MapPanelSpec:
     overview_style: str = "native"
     show_subdomain_boundaries: bool = True
     extent_panel: str | None = None
+    extent_source: str | None = None
+    show_elevation_label: bool = True
     fit_frame: bool = False
     field_extent: str = "roi"
     lines: tuple[str, ...] = ()
@@ -475,6 +477,8 @@ def _parse_panel(value: object, *, context: str) -> MapPanelSpec:
         overview_style=str(mapping.get("overview_style", "native")),
         show_subdomain_boundaries=bool(_coerce_bool(mapping.get("show_subdomain_boundaries"), default=True)),
         extent_panel=_optional_str(mapping.get("extent_panel")),
+        extent_source=_optional_str(mapping.get("extent_source")),
+        show_elevation_label=bool(_coerce_bool(mapping.get("show_elevation_label"), default=True)),
         field_extent=str(mapping.get("field_extent", "roi")),
         lines=_coerce_str_list(mapping.get("lines"), context=f"{context}.lines"),
         items=_parse_legend_items(mapping.get("items"), context=f"{context}.items"),
@@ -527,7 +531,11 @@ def _parse_panel(value: object, *, context: str) -> MapPanelSpec:
         raise ValueError(f"{context}.field_extent must be roi or full")
     if panel.field_extent == "full" and panel.kind != "dem":
         raise ValueError(f"{context}.field_extent full is only supported for dem")
-    if (panel.extent_panel or panel.overview_style != "native") and panel.kind != "overview":
+    if panel.extent_source not in {None, "model_grid"}:
+        raise ValueError(f"{context}.extent_source must be model_grid")
+    if panel.extent_source and panel.extent_panel:
+        raise ValueError(f"{context}: use either extent_source or extent_panel")
+    if (panel.extent_source or panel.extent_panel or panel.overview_style != "native") and panel.kind != "overview":
         raise ValueError(f"{context}: overview controls require kind overview")
     if panel.kind in {"snow_depth", "swe", "liquid_water_content"}:
         if panel.source is None:

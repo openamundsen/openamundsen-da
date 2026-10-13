@@ -6,6 +6,7 @@ from collections.abc import Iterable
 from contextlib import contextmanager
 from dataclasses import dataclass
 from io import BytesIO
+import math
 from pathlib import Path
 from types import ModuleType
 
@@ -73,7 +74,9 @@ def temporary_module_attributes(module: ModuleType, values: dict[str, object]):
                 pass
 
 
-def _write_png_with_target_canvas(buffer: BytesIO, output_png: Path, target_px: tuple[int, int]) -> None:
+def _write_png_with_target_canvas(
+    buffer: BytesIO, output_png: Path, target_px: tuple[int, int]
+) -> None:
     buffer.seek(0)
     with Image.open(buffer) as image:
         if image.size == target_px:
@@ -83,7 +86,9 @@ def _write_png_with_target_canvas(buffer: BytesIO, output_png: Path, target_px: 
         mode = "RGBA" if image.mode == "RGBA" else "RGB"
         background = (255, 255, 255, 0) if mode == "RGBA" else (255, 255, 255)
         canvas = Image.new(mode, target_px, background)
-        source = image.convert(mode).crop((0, 0, min(image.width, target_px[0]), min(image.height, target_px[1])))
+        source = image.convert(mode).crop(
+            (0, 0, min(image.width, target_px[0]), min(image.height, target_px[1]))
+        )
         canvas.paste(source, (0, 0))
         canvas.save(output_png, format="PNG", dpi=image.info.get("dpi"))
 
@@ -131,6 +136,7 @@ def save_figure_png(
     bbox_inches=None,
     pad_inches=None,
     target_size_in: tuple[float, float] | None = None,
+    target_width_in: float | None = None,
 ) -> None:
     """Save a figure as PNG using the shared export DPI."""
     output_png = Path(output_png)
@@ -139,6 +145,29 @@ def save_figure_png(
         save_kwargs["bbox_inches"] = bbox_inches
     if pad_inches is not None:
         save_kwargs["pad_inches"] = pad_inches
+    if target_width_in is not None:
+        if (
+            target_size_in is not None
+            or not math.isfinite(target_width_in)
+            or target_width_in <= 0
+        ):
+            raise ValueError(
+                "target_width_in must be positive and cannot accompany target_size_in"
+            )
+        target_width_px = max(1, round(target_width_in * dpi))
+        for _ in range(10):
+            buffer = BytesIO()
+            fig.savefig(buffer, format="png", dpi=dpi, **save_kwargs)
+            buffer.seek(0)
+            with Image.open(buffer) as image:
+                rendered_width = image.width
+            if rendered_width == target_width_px:
+                output_png.write_bytes(buffer.getvalue())
+                return
+            # Scale both dimensions equally; glyph sizes remain in physical points.
+            factor = (target_width_px + 0.5) / rendered_width
+            fig.set_size_inches(fig.get_size_inches() * factor, forward=True)
+        raise RuntimeError("Figure width did not converge without raster resampling")
     if target_size_in is None:
         fig.savefig(output_png, dpi=dpi, **save_kwargs)
         return
@@ -159,7 +188,9 @@ def save_figure_png(
         width_scale = target_px[0] / max(current_px[0], 1)
         height_scale = target_px[1] / max(current_px[1], 1)
         width_in, height_in = fig.get_size_inches()
-        fig.set_size_inches(width_in * width_scale, height_in * height_scale, forward=True)
+        fig.set_size_inches(
+            width_in * width_scale, height_in * height_scale, forward=True
+        )
     buffer = BytesIO()
     fig.savefig(buffer, format="png", dpi=dpi, **save_kwargs)
     _write_png_with_target_canvas(buffer, output_png, target_px)

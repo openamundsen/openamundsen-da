@@ -75,8 +75,6 @@ _POSTER_VERTICAL_COLORBAR_TICKS_ENABLED = False
 _POSTER_VERTICAL_COLORBAR_UNIT_HEADER_ENABLED = False
 _POSTER_VERTICAL_COLORBAR_CONTAINER_BOTTOM_AXES = 0.0
 _POSTER_VERTICAL_COLORBAR_CONTAINER_HEIGHT_AXES = 1.0
-_POSTER_VERTICAL_COLORBAR_UNIT_HEADER_HEIGHT_AXES = 0.09
-_POSTER_VERTICAL_COLORBAR_UNIT_HEADER_GAP_AXES = 0.03
 _ONE_COLUMN_PANEL_WIDTH_REFERENCE_NCOLS = 3
 _ONE_COLUMN_RASTER_PANEL_SCALE = 1.20
 _ONE_COLUMN_RASTER_PANEL_KINDS = frozenset(
@@ -856,6 +854,15 @@ def register_child_axes(parent_ax, child_ax) -> None:
     setattr(parent_ax, "_oa_child_axes", children)
 
 
+def draw_colorbar_unit_header(ax, title: str, *, fontsize: float) -> None:
+    """Center a unit above the bar with a fixed three-point clearance."""
+    ax.annotate(
+        title, xy=(0.5, 1.0), xycoords="axes fraction", xytext=(0, 3),
+        textcoords="offset points", ha="center", va="bottom", fontsize=fontsize,
+        annotation_clip=False,
+    )
+
+
 def attach_colorbar(
     ax,
     mappable,
@@ -907,37 +914,17 @@ def attach_colorbar(
         return
 
     title = extract_unit_title(label)
-    container_ax = None
-    if title and _POSTER_VERTICAL_COLORBAR_UNIT_HEADER_ENABLED:
-        container_ax = ax.inset_axes(
-            [
-                1.0 + (0.025 if compact else _VERTICAL_COLORBAR_XOFFSET_AXES),
-                _POSTER_VERTICAL_COLORBAR_CONTAINER_BOTTOM_AXES,
-                0.025 if compact else _VERTICAL_COLORBAR_WIDTH_AXES,
-                _POSTER_VERTICAL_COLORBAR_CONTAINER_HEIGHT_AXES,
-            ],
-            transform=ax.transAxes,
-        )
-        container_ax.set_axis_off()
-        header_height = _POSTER_VERTICAL_COLORBAR_UNIT_HEADER_HEIGHT_AXES
-        header_gap = _POSTER_VERTICAL_COLORBAR_UNIT_HEADER_GAP_AXES
-        cax = container_ax.inset_axes(
-            [0.0, 0.0, 1.0, max(1.0 - header_height - header_gap, 0.1)],
-            transform=container_ax.transAxes,
-        )
-        register_child_axes(ax, container_ax)
-        register_child_axes(ax, cax)
-    else:
-        cax = ax.inset_axes(
-            [
-                1.0 + (0.025 if compact else _VERTICAL_COLORBAR_XOFFSET_AXES),
-                _VERTICAL_COLORBAR_BOTTOM_AXES,
-                0.025 if compact else _VERTICAL_COLORBAR_WIDTH_AXES,
-                _VERTICAL_COLORBAR_HEIGHT_AXES,
-            ],
-            transform=ax.transAxes,
-        )
-        register_child_axes(ax, cax)
+    poster_header = bool(title and _POSTER_VERTICAL_COLORBAR_UNIT_HEADER_ENABLED)
+    cax = ax.inset_axes(
+        [
+            1.0 + (0.025 if compact else _VERTICAL_COLORBAR_XOFFSET_AXES),
+            _POSTER_VERTICAL_COLORBAR_CONTAINER_BOTTOM_AXES if poster_header else _VERTICAL_COLORBAR_BOTTOM_AXES,
+            0.025 if compact else _VERTICAL_COLORBAR_WIDTH_AXES,
+            _POSTER_VERTICAL_COLORBAR_CONTAINER_HEIGHT_AXES if poster_header else _VERTICAL_COLORBAR_HEIGHT_AXES,
+        ],
+        transform=ax.transAxes,
+    )
+    register_child_axes(ax, cax)
     cbar = plt.colorbar(mappable, cax=cax, orientation="vertical")
     if ticks:
         cbar.set_ticks(ticks)
@@ -952,20 +939,10 @@ def attach_colorbar(
         tick.set_ha("center")
     if not poster_ticks_applied:
         _thin_vertical_colorbar_ticklabels(cbar)
-    if title and container_ax is not None:
-        cbar.ax.get_yticklabels()[-1].set_visible(False)
-    if title and container_ax is not None:
-        container_ax.text(
-            0.0,
-            1.0,
-            title,
-            transform=container_ax.transAxes,
-            ha="left",
-            va="top",
-            fontsize=_COLORBAR_TITLE_SIZE,
-        )
-    elif title:
-        cbar.ax.text(0.5, 1.02, title, transform=cbar.ax.transAxes, ha="center", va="bottom", fontsize=_COLORBAR_TITLE_SIZE)
+    if title:
+        # Keep the upper endpoint text below its tick, clear of the unit header.
+        tick_labels[-1].set_va("top")
+        draw_colorbar_unit_header(cbar.ax, title, fontsize=_COLORBAR_TITLE_SIZE)
     elif label:
         cbar.set_label(label, fontsize=_COLORBAR_TITLE_SIZE)
 

@@ -101,6 +101,7 @@ def draw_station_elevations(
     tick_size: float = 7.0,
     show_grid: bool = True,
     fit_frame: bool = False,
+    show_elevation_label: bool = True,
 ) -> tuple[Axes, ...]:
     """Draw equal-width sorted-bar groups with shared limits and separate counts.
 
@@ -163,7 +164,7 @@ def draw_station_elevations(
         )
         child.yaxis.set_major_locator(MaxNLocator(nbins=4, integer=True))
         child.tick_params(labelsize=tick_size, length=2, pad=2, labelleft=index == 0)
-        if index == 0:
+        if index == 0 and show_elevation_label:
             child.set_ylabel("Elevation [m]", fontsize=label_size, labelpad=3)
         if show_grid:
             child.set_axisbelow(True)

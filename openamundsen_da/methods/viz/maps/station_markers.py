@@ -9,8 +9,8 @@ import numpy as np
 import pandas as pd
 from matplotlib.path import Path as MplPath
 
-FORCING_STATION_COLOR = "#440154"
-SNOW_STATION_COLOR = "#22a884"
+FORCING_STATION_COLOR = "#22a884"
+SNOW_STATION_COLOR = "#fde725"
 HOLDOUT_STATION_COLOR = "#000000"
 HOLDOUT_STATION_MARKER = "x"
 HOLDOUT_STATION_LINEWIDTH = 1.0

@@ -506,3 +506,7 @@ station altitudes distributed by the upstream Rofental example, including
 
 Station-elevation tests also cover viridis colors, regular count ticks, full-height
 chart frames, row-spanning aspect preservation and overview extent references.
+
+`tests/unit/test_map_publication_layout.py` checks proportional tight PNG export,
+colorbar endpoint/header spacing, three/four-entry legends, snow marker priority
+and optional station-chart y-axis titles.

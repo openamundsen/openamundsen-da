@@ -65,6 +65,7 @@ from openamundsen_da.methods.viz.maps.hillshade import aspect_hillshade, grid_ex
 from openamundsen_da.methods.viz.maps.layout import (
     apply_map_axis_style,
     attach_colorbar,
+    draw_colorbar_unit_header,
     axis_height_inches,
     axis_width_inches,
     buffered_extent,
@@ -168,7 +169,6 @@ _SUBDOMAIN_NO_DA_LABEL = "no DA"
 _MAP_SUPPORT_TEXT_SIZE = 5.8
 _COLORBAR_PANEL_UNIT_HEADER_ENABLED = False
 _COLORBAR_PANEL_UNIT_HEADER_HEIGHT_AXES = 0.20
-_COLORBAR_PANEL_UNIT_HEADER_GAP_AXES = 0.03
 _COLORBAR_PANEL_POSTER_TICKS_ENABLED = False
 _ELEVATION_BAND_WSF_CMAP = _FRACTION_MODEL_CMAP
 _WET_SNOW_MODEL_CODES = (110, 125)
@@ -522,7 +522,7 @@ def draw_stations_overlay(
                     "s": STATION_MARKER_SIZE,
                     "edgecolor": "none",
                     "linewidth": 0.0,
-                    "zorder": _GRID_ZORDER + 4,
+                    "zorder": _GRID_ZORDER + (5 if marker.kind in {"snow", "both"} else 4),
                     "clip_on": True,
                     "transform": transform,
                 }
@@ -3533,19 +3533,8 @@ def render_colorbar_panel(ax, *, panel: MapPanelSpec, artifacts: dict[str, dict[
     title = extract_unit_title(label)
     cax = ax
     if title and _COLORBAR_PANEL_UNIT_HEADER_ENABLED:
-        header_height = _COLORBAR_PANEL_UNIT_HEADER_HEIGHT_AXES
-        gap = _COLORBAR_PANEL_UNIT_HEADER_GAP_AXES
-        cax = ax.inset_axes([0.0, 0.0, 1.0, max(1.0 - header_height - gap, 0.1)], transform=ax.transAxes)
+        cax = ax.inset_axes([0.0, 0.0, 1.0, 1.0], transform=ax.transAxes)
         register_child_axes(ax, cax)
-        ax.text(
-            0.5,
-            1.0,
-            title,
-            transform=ax.transAxes,
-            ha="center",
-            va="top",
-            fontsize=_COLORBAR_TITLE_SIZE,
-        )
     cbar = plt.colorbar(source["mappable"], cax=cax, orientation="vertical")
     if ticks:
         cbar.set_ticks(ticks)
@@ -3553,8 +3542,8 @@ def render_colorbar_panel(ax, *, panel: MapPanelSpec, artifacts: dict[str, dict[
         cbar.set_ticklabels(ticklabels)
     _apply_poster_colorbar_ticks(cbar, label=label, ticks=ticks)
     cbar.ax.tick_params(labelsize=_COLORBAR_TICK_SIZE, pad=1.0)
-    if title and not _COLORBAR_PANEL_UNIT_HEADER_ENABLED:
-        cbar.ax.text(0.5, 1.02, title, transform=cbar.ax.transAxes, ha="center", va="top", fontsize=_COLORBAR_TITLE_SIZE)
+    if title:
+        draw_colorbar_unit_header(cbar.ax, title, fontsize=_COLORBAR_TITLE_SIZE)
     return {}
 
 
