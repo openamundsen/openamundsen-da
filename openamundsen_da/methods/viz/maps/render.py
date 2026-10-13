@@ -37,6 +37,10 @@ from openamundsen_da.methods.viz.maps.annotations import (
 )
 import openamundsen_da.methods.viz.maps.layout as _layout_module
 from openamundsen_da.methods.viz.maps.config import MapRecipe
+from openamundsen_da.methods.viz.plots.station_elevations import (
+    draw_station_elevations,
+    prepare_station_elevations,
+)
 from openamundsen_da.methods.viz.maps.data import (
     ModelFields,
     ObservationScene,
@@ -519,6 +523,23 @@ def _render_panel(
 ) -> dict[str, object]:
     if panel.kind == "overview":
         return _render_overview_panel(ax, panel=panel, context=context, label=label, defaults=defaults)
+    if panel.kind == "station_elevations":
+        networks = prepare_station_elevations(
+            context.stations, context.snow_stations, source=panel.source or "both", extent=extent
+        )
+        children = draw_station_elevations(
+            ax,
+            networks,
+            label_size=_layout_module._LABEL_SIZE_OVERRIDE or 8.0 * _layout_module._STYLE_SCALE,
+            tick_size=_layout_module._TICK_SIZE,
+            show_grid=panel.show_grid if panel.show_grid is not None else True,
+        )
+        for child in children:
+            _layout_module.register_child_axes(ax, child)
+        _layout_module.draw_axes_title(
+            ax, _panel_title(label, panel.title or "Elevations of marked stations")
+        )
+        return {"station_elevations": networks, "axes": children}
     if panel.kind == "roi":
         return _render_roi_panel(ax, panel=panel, context=context, extent=extent, label=label, defaults=defaults)
     if panel.kind in {"hillshade", "dem", "aspect", "svf", "srf", "landcover"}:

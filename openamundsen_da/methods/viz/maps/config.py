@@ -8,6 +8,7 @@ from openamundsen_da.core.env import _read_yaml_file
 
 
 SUPPORTED_PANEL_KINDS = {
+    "station_elevations",
     "overview",
     "roi",
     "hillshade",
@@ -512,6 +513,9 @@ def _parse_panel(value: object, *, context: str) -> MapPanelSpec:
         if panel.source not in SUPPORTED_MODEL_SOURCES:
             supported = ", ".join(sorted(SUPPORTED_MODEL_SOURCES))
             raise ValueError(f"{context}.source must be one of: {supported}")
+    elif panel.kind == "station_elevations":
+        if panel.source is not None and panel.source not in {"forcing", "snow", "both"}:
+            raise ValueError(f"{context}.source must be forcing, snow or both for station_elevations")
     elif panel.kind == "overview":
         if panel.scale is None:
             raise ValueError(f"{context}.scale is required for overview panels")

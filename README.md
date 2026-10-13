@@ -42,6 +42,11 @@ image tracks the latest green `main` commit and is not a release.
 
 ## Command-line workflow
 
+Project-map recipes can include elevation-ranked forcing and snow-station bars
+with `kind: station_elevations`. See the
+[configuration guide](docs/guides/configuration.md#station-elevation-map-panels)
+for standalone and mixed-map use, metadata requirements and counting semantics.
+
 The installed distribution exposes one command, `openamundsen-da`:
 
 ```text

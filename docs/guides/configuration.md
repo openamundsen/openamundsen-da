@@ -432,3 +432,62 @@ Typical early failures:
 - Keep data assimilation experimentation and observation mappings in project YAML.
 - Use one project per experiment/time span.
 - Keep `assimilation_events` explicit and versioned in each project.
+
+## Station-elevation map panels
+
+An opt-in `station_elevations` panel in a project's `maps.yml` displays
+metadata elevations as ascending bars. `source` accepts `forcing`, `snow`
+or `both` (the default). This one-panel recipe produces a standalone chart;
+the same panel can accompany `roi` and `overview` panels in a mixed figure.
+
+```yaml
+maps:
+  station_elevations:
+    title: Station elevations
+    output_name: station_elevations
+    layout: {nrows: 1, ncols: 1}
+    panels:
+      - row: 0
+        col: 0
+        kind: station_elevations
+        source: both
+        show_grid: true
+```
+
+The panel uses the existing setup forcing inventory and project snow-station
+metadata (`obs.stations.dir`). It selects records within the recipe's row
+extent, including boundary points. The required `alt` field supplies elevation
+in metres; values are not sampled from the DEM. Records are sorted by elevation,
+then ID. Colocated records remain distinct, including records shared across
+the two source inventories. Each source has its own rank/count axis and the
+groups share elevation limits. Station counts describe the input inventory,
+not temporal completeness or independent measurement locations.
+
+Missing IDs, duplicate IDs within a network, invalid coordinates, missing or
+nonfinite selected elevations and empty requested networks raise errors.
+Use `source: forcing` or `source: snow` explicitly when only one inventory exists.
+The plotting functions `prepare_station_elevations` and
+`draw_station_elevations` in `openamundsen_da.methods.viz.plots.station_elevations`
+also support drawing into an existing Matplotlib axes without project-map
+or assimilation-event orchestration.
+
+For a prepared setup without assimilation events, static map recipes can be
+rendered directly without simulating a project:
+
+```python
+from pathlib import Path
+from openamundsen_da.methods.viz.maps.config import load_project_maps_config
+from openamundsen_da.methods.viz.maps.data import load_static_context
+from openamundsen_da.methods.viz.maps.render import render_map_recipe
+
+project = Path("/path/to/setup/projects/project_name")
+context = load_static_context(project)
+for recipe in load_project_maps_config(project / "maps.yml").maps:
+    render_map_recipe(
+        project_dir=project, context=context, recipe=recipe,
+        output_path=project / "results/maps" / f"{recipe.output_stem}.png",
+    )
+```
+
+The standard map exporter supplies the shared 600 dpi PNG output. No new
+CLI command or changes to existing map layout defaults are required.

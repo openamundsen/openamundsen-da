@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Add reusable station-elevation ranked bar plots and a `station_elevations`
+  project-map panel for forcing, snow or both networks, preserving colocated
+  records and selecting metadata elevations within the displayed extent.
 - Add opt-in project-map markers that distinguish forcing, snow-observation,
   co-located and holdout stations, with holdouts using a smaller black `x`
   rendered above other station markers, plus optional subdomain ID labels.

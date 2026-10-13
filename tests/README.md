@@ -2,6 +2,11 @@
 
 This folder documents the current regression-testing setup for `openamundsen_da`.
 
+`tests/unit/test_station_elevations.py` covers elevation sorting, extent selection,
+colocated records, metadata errors, independent network ranks and embedding in
+project maps without assimilation events. Run it together with
+`tests/unit/test_project_maps.py` for map changes.
+
 ## Recommended Workflow (Single Developer, Private Repo)
 
 1. Start from `main` and create a feature branch.
