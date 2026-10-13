@@ -821,6 +821,10 @@ def render_map_recipe(
         if populated_axes:
             top_row = _decorated_axes_top(fig, populated_axes)
             title_artist.set_y(min(1.03, top_row + _figure_title_gap(fig, populated_axes)))
+    if frame_positions is not None:
+        from openamundsen_da.methods.viz.maps.frames import align_bottom_annotations
+
+        align_bottom_annotations(fig, axes)
     force_figure_text_black(fig, axes)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     save_figure_png(
@@ -838,6 +842,8 @@ def render_map_recipe(
                 "kind": panel.kind, "title": ax.get_title(loc="left"),
                 "bounds": list(ax.get_position().bounds),
                 "extent": artifact.get("extent", row_extents[panel.row]) if panel.kind != "station_elevations" else None,
+                "colorbar_bounds": [list(child.get_position().bounds) for child in ax.child_axes if child.get_gid() == "oa_da_horizontal_colorbar"],
+                "count_label_y": [ax.get_position().y0 + text.get_position()[1] * ax.get_position().height for text in ax.texts if text.get_gid() == "oa_da_station_count"],
                 "chart_bounds": [list(child.get_position().bounds) for child in artifact.get("axes", ())],
                 "detail_extent": _grid_extent(context) if panel.extent_source == "model_grid" else (row_extents[next(p.row for p in recipe.panels if p.name == panel.extent_panel)] if panel.extent_panel else None),
             })

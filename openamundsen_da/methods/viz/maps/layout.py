@@ -889,6 +889,7 @@ def attach_colorbar(
             ],
             transform=ax.transAxes,
         )
+        container_ax.set_gid("oa_da_horizontal_colorbar")
         container_ax.set_axis_off()
         cax = container_ax.inset_axes([0.0, 0.0, colorbar_width, 1.0], transform=container_ax.transAxes)
         register_child_axes(ax, container_ax)

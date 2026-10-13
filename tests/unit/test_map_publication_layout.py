@@ -181,3 +181,67 @@ def test_overview_extent_source_rejects_ambiguous_or_unknown_config(tmp_path, ex
     )
     with pytest.raises(ValueError, match="extent_source"):
         load_project_maps_config(path)
+
+
+def test_horizontal_bar_aligns_count_subtitle_after_tight_export(tmp_path):
+    from openamundsen_da.methods.viz.maps.frames import align_bottom_annotations
+
+    fig = plt.figure(figsize=(7, 4))
+    detail = fig.add_axes([0.08, 0.2, 0.5, 0.65])
+    chart = fig.add_axes([0.7, 0.2, 0.25, 0.3])
+    try:
+        layout.attach_colorbar(
+            detail,
+            ScalarMappable(norm=Normalize(0, 4000), cmap="Greys_r"),
+            label="Elevation [m]",
+            ticks=(0, 2000, 4000),
+            layout="horizontal",
+        )
+        draw_station_elevations(
+            chart,
+            {"snow": pd.DataFrame({"rank": [1, 2], "alt": [1000, 2000]})},
+            fit_frame=True,
+            show_elevation_label=False,
+        )
+        align_bottom_annotations(fig, [detail, chart])
+        save_figure_png(
+            fig,
+            tmp_path / "aligned.png",
+            dpi=150,
+            bbox_inches="tight",
+            pad_inches=0,
+            target_width_in=6,
+        )
+        fig.canvas.draw()
+        bar = next(
+            child
+            for child in detail.child_axes
+            if child.get_gid() == "oa_da_horizontal_colorbar"
+        )
+        label = next(
+            text for text in chart.texts if text.get_gid() == "oa_da_station_count"
+        )
+        assert label.get_text() == "Station count [-]"
+        renderer = fig.canvas.get_renderer()
+        bbox = bar.get_window_extent(renderer)
+        text_bbox = label.get_window_extent(renderer)
+        assert (bbox.y0 + bbox.y1) / 2 == pytest.approx(
+            (text_bbox.y0 + text_bbox.y1) / 2
+        )
+        assert bbox.y1 < detail.get_window_extent(renderer).y0
+    finally:
+        plt.close(fig)
+
+
+def test_frame_column_gap_is_opt_in():
+    from openamundsen_da.methods.viz.maps.config import _parse_layout
+
+    assert _parse_layout({"nrows": 1, "ncols": 1}, context="layout").column_gap_in == 0.82
+    assert (
+        _parse_layout(
+            {"nrows": 1, "ncols": 1, "alignment": "frames", "column_gap_in": 0.35}, context="layout"
+        ).column_gap_in
+        == 0.35
+    )
+    with pytest.raises(ValueError):
+        _parse_layout({"nrows": 1, "ncols": 1, "column_gap_in": -1}, context="layout")

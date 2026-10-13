@@ -93,6 +93,7 @@ class LayoutSpec:
     height_ratios: tuple[float, ...] = ()
     alignment: str = "native"
     width_cm: float = 17.4
+    column_gap_in: float = 0.82
 
 
 @dataclass(frozen=True)
@@ -411,7 +412,7 @@ def _parse_layout(value: object, *, context: str) -> LayoutSpec:
     alignment = str(mapping.get("alignment", "native"))
     if alignment not in {"native", "frames"}:
         raise ValueError(f"{context}.alignment must be native or frames")
-    return LayoutSpec(nrows=nrows, ncols=ncols, alignment=alignment, width_cm=_optional_positive_float(mapping.get("width_cm"), context=f"{context}.width_cm") or 17.4, width_ratios=width_ratios, height_ratios=height_ratios)
+    return LayoutSpec(column_gap_in=_optional_positive_float(mapping.get("column_gap_in"), context=f"{context}.column_gap_in") or 0.82, nrows=nrows, ncols=ncols, alignment=alignment, width_cm=_optional_positive_float(mapping.get("width_cm"), context=f"{context}.width_cm") or 17.4, width_ratios=width_ratios, height_ratios=height_ratios)
 
 
 def _parse_row_views(value: object, *, context: str, nrows: int) -> tuple[MapRowViewSpec, ...]:

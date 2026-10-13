@@ -23,7 +23,7 @@ def configure_frames(fig, recipe, row_extents):
     heights = recipe.layout.height_ratios or (1.0,) * recipe.layout.nrows
     width = recipe.layout.width_cm / 2.54
     left, right, bottom, top = 0.46, 0.13, 0.43, 0.34
-    column_gap, row_gap = 0.82, 0.62
+    column_gap, row_gap = recipe.layout.column_gap_in, 0.62
     unit_width = (width - left - right - column_gap * (len(widths) - 1)) / sum(widths)
     reference_width = unit_width * sum(
         widths[reference.col : reference.col + reference.colspan]
@@ -51,3 +51,25 @@ def configure_frames(fig, recipe, row_extents):
         ) + row_gap * (panel.rowspan - 1)
         positions.append((x / width, (panel_top - h) / height, w / width, h / height))
     return positions
+
+
+def align_bottom_annotations(fig, axes):
+    """Align count subtitles with horizontal colorbars on matching frame bottoms."""
+    fig.canvas.draw()
+    bars = [
+        (ax, child)
+        for ax in axes
+        for child in ax.child_axes
+        if child.get_gid() == "oa_da_horizontal_colorbar"
+    ]
+    for ax in axes:
+        for label in ax.texts:
+            if label.get_gid() != "oa_da_station_count":
+                continue
+            for parent, bar in bars:
+                if abs(parent.get_position().y0 - ax.get_position().y0) > 1e-6:
+                    continue
+                center = bar.get_position().y0 + bar.get_position().height / 2
+                label.set_y((center - ax.get_position().y0) / ax.get_position().height)
+                label.set_verticalalignment("center")
+                break

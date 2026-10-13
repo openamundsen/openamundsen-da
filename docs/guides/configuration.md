@@ -504,6 +504,10 @@ alignment, `width_cm` controls the final tightly cropped export width instead of
 `target_size_in`. Canvas dimensions scale proportionally to preserve map aspects;
 there is no PNG resampling or padding. The height follows the decorated content.
 Explicit row views spanned by a panel must have identical view settings.
+Set `layout.column_gap_in` to a positive physical gap in inches (default `0.82`)
+for frame layouts. A smaller gap can reclaim space when the DEM uses
+`legend: horizontal` below its frame. Station-count subtitles on the same bottom
+row align with the horizontal colorbar center. Native layout spacing is unchanged.
 
 For DEM panels, `field_extent: full` shows valid elevation pixels outside the
 ROI as well; the default `roi` continues to mask them. Combine it with
@@ -516,8 +520,8 @@ of a detail panel named `domain` in the same recipe. Native overview colors and
 internal boundaries remain the defaults. In frame layouts the overview expands
 its geographic extent to fit its frame while retaining native country labels.
 
-Forcing stations use viridis green (`#22a884`); snow stations use viridis yellow
-(`#fde725`) throughout station maps, split symbols, legends and elevation bars.
+Forcing stations use viridis yellow (`#fde725`); snow stations use viridis purple
+(`#453782`) throughout station maps, split symbols, legends and elevation bars.
 Other assimilation colors are unchanged. Station-elevation count axes use
 regular integer ticks; headings retain exact record counts. An inside
 `station_categories` legend can use `source: networks` to omit the holdout key.

@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Add recipe-specific column gaps for aligned frames and align station-count
+  subtitles with neighboring horizontal colorbars.
 - Add opt-in aligned map/chart frames, full-extent DEM display and gray overview
   silhouettes with a referenced detail-panel extent rectangle.
 - Add reusable station-elevation ranked bar plots and a `station_elevations`
@@ -35,7 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   keeping scientific manifests, weights, logs and compact consumers durable.
 
 ### Changed
-- Use viridis green/yellow for forcing/snow station symbols and elevation bars;
+- Use viridis yellow/purple for forcing/snow station symbols and elevation bars;
   show regular integer station-count ticks.
 - Derive live project-size telemetry from storage-ledger materialized/removed
   byte counters after one baseline scan, downsample growing PNG histories,

@@ -175,7 +175,8 @@ def draw_station_elevations(
     ax.text(
         (left + 0.98) / 2,
         -0.25 if fit_frame else -0.17,
-        "Station count",
+        "Station count [-]",
+        gid="oa_da_station_count",
         transform=ax.transAxes,
         ha="center",
         va="top",
