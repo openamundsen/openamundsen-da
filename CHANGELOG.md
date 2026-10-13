@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Add opt-in aligned map/chart frames, full-extent DEM display and gray overview
+  silhouettes with a referenced detail-panel extent rectangle.
 - Add reusable station-elevation ranked bar plots and a `station_elevations`
   project-map panel for forcing, snow or both networks, preserving colocated
   records and selecting metadata elevations within the displayed extent.
@@ -33,6 +35,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   keeping scientific manifests, weights, logs and compact consumers durable.
 
 ### Changed
+- Use viridis purple/teal for forcing/snow station symbols and elevation bars;
+  show regular integer station-count ticks.
 - Derive live project-size telemetry from storage-ledger materialized/removed
   byte counters after one baseline scan, downsample growing PNG histories,
   break curves across monitor gaps and retain a companion workflow-phase

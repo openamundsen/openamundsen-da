@@ -491,3 +491,34 @@ for recipe in load_project_maps_config(project / "maps.yml").maps:
 
 The standard map exporter supplies the shared 600 dpi PNG output. No new
 CLI command or changes to existing map layout defaults are required.
+
+### Aligned detail map, overview and station charts
+
+Use `layout: {nrows: 2, ncols: 2, width_ratios: [2, 1], alignment: frames,
+width_cm: 17.4}` for physical frame alignment. A detail map with `rowspan: 2`
+occupies the left column; an overview and station-elevation panel occupy the
+right rows. The canvas height follows the first detail map's geographic aspect,
+with physical space reserved for titles, colorbars and axis labels. Maps retain
+undistorted coordinates. `alignment: native` remains the default. With frame
+alignment, `width_cm` controls export size instead of `target_size_in`.
+Explicit row views spanned by a panel must have identical view settings.
+
+For DEM panels, `field_extent: full` shows valid elevation pixels outside the
+ROI as well; the default `roi` continues to mask them. Combine it with
+`show_hillshade: true` and `hillshade_extent: full` for continuous gray terrain.
+
+Overview panels accept `overview_style: gray` and
+`show_subdomain_boundaries: false` for a dissolved gray ROI silhouette. Add
+`extent_panel: domain` to show a light-gray rectangle for the displayed extent
+of a detail panel named `domain` in the same recipe. Native overview colors and
+internal boundaries remain the defaults. In frame layouts the overview expands
+its geographic extent to fit its frame while retaining native country labels.
+
+Forcing stations use viridis purple (`#440154`); snow stations use viridis teal
+(`#22a884`) throughout station maps, split symbols, legends and elevation bars.
+Other assimilation colors are unchanged. Station-elevation count axes use
+regular integer ticks; headings retain exact record counts. An inside
+`station_categories` legend can use `source: networks` to omit the holdout key.
+
+Frame-aligned exports also write `<output_name>.layout.json`, recording final
+frame bounds, chart bounds, geographic extents and figure dimensions for validation.

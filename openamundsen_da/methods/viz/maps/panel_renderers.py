@@ -1211,6 +1211,10 @@ def overview_extent_with_label_fit(
 ) -> tuple[float, float, float, float]:
     target_extent = buffered_extent(context)
     target_aspect = max(float(target_extent[3] - target_extent[2]), 1e-9) / max(float(target_extent[1] - target_extent[0]), 1e-9)
+    if panel.fit_frame:
+        position = ax.get_position()
+        size = ax.figure.get_size_inches()
+        target_aspect = position.height * size[1] / (position.width * size[0])
     extent = expand_extent_to_target_aspect(
         overview_extent(ax, context, scale=int(panel.scale or 1)),
         target_aspect=target_aspect,
@@ -1250,10 +1254,19 @@ def render_overview_panel(
     context: StaticContext,
     label: str | None,
     defaults: MapDefaults,
+    detail_extent=None,
     boundaries_loader: Callable[..., object] = load_overview_boundaries,
     regions_loader: Callable[..., object] = load_overview_regions,
     labels_loader: Callable[..., object] = load_overview_labels,
 ) -> dict[str, object]:
+    roi_color = "#858585" if panel.overview_style == "gray" else _OVERVIEW_ROI_COLOR
+    roi_edge = "#333333" if panel.overview_style == "gray" else roi_color
+    roi = context.roi_gdf.dissolve() if not panel.show_subdomain_boundaries else context.roi_gdf
+    if detail_extent is not None:
+        from matplotlib.patches import Rectangle
+
+        xmin, xmax, ymin, ymax = detail_extent
+        ax.add_patch(Rectangle((xmin, ymin), xmax - xmin, ymax - ymin, facecolor="#dedede", edgecolor="#aaaaaa", linewidth=0.5, zorder=2))
     try:
         countries = boundaries_loader(setup_dir=context.setup_dir)
         country_regions = regions_loader(setup_dir=context.setup_dir)
@@ -1277,14 +1290,15 @@ def render_overview_panel(
             show_y_ticklabels=panel.col == 0,
             aspect_adjustable="box",
         )
-        context.roi_gdf.plot(
+        roi.plot(
             ax=ax,
-            facecolor=_OVERVIEW_ROI_COLOR,
-            edgecolor=_OVERVIEW_ROI_COLOR,
+            facecolor=roi_color,
+            edgecolor=roi_edge,
             linewidth=0.8,
             zorder=25,
         )
-        draw_subdomain_boundaries(ax, context)
+        if panel.show_subdomain_boundaries:
+            draw_subdomain_boundaries(ax, context)
         roi_label = overview_roi_label_spec(panel, extent=extent, context=context)
         label_specs = [roi_label] if roi_label is not None else []
         if panel.show_subdomain_labels:
@@ -1338,8 +1352,9 @@ def render_overview_panel(
         show_y_ticklabels=panel.col == 0,
         aspect_adjustable="box",
     )
-    context.roi_gdf.plot(ax=ax, facecolor=_OVERVIEW_ROI_COLOR, edgecolor=_OVERVIEW_ROI_COLOR, linewidth=0.8, zorder=25)
-    draw_subdomain_boundaries(ax, context)
+    roi.plot(ax=ax, facecolor=roi_color, edgecolor=roi_edge, linewidth=0.8, zorder=25)
+    if panel.show_subdomain_boundaries:
+        draw_subdomain_boundaries(ax, context)
     roi_label = overview_roi_label_spec(panel, extent=extent, context=context)
     label_specs = overview_country_label_specs(
         ax=ax,
@@ -1545,7 +1560,7 @@ def render_static_panel(
     field = _STATIC_FIELD_KIND_TO_FIELD[panel.kind]
     preset = require_static_field_preset(field)
     raw_data = field_array(context, field)
-    data = masked(raw_data, context.roi_mask)
+    data = np.ma.masked_invalid(raw_data) if panel.field_extent == "full" else masked(raw_data, context.roi_mask)
     norm = static_field_norm(preset, data.filled(np.nan))
     alpha = 1.0
     if resolve_flag(panel.show_hillshade, defaults, "show_hillshade", False):
@@ -1590,6 +1605,7 @@ def render_static_panel(
         attach_colorbar(
             ax,
             image,
+            compact=panel.fit_frame,
             label=colorbar_style.label,
             ticks=colorbar_style.ticks,
             ticklabels=colorbar_style.ticklabels,

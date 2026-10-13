@@ -100,6 +100,7 @@ def draw_station_elevations(
     label_size: float = 8.0,
     tick_size: float = 7.0,
     show_grid: bool = True,
+    fit_frame: bool = False,
 ) -> tuple[Axes, ...]:
     """Draw equal-width sorted-bar groups with shared limits and separate counts.
 
@@ -117,13 +118,15 @@ def draw_station_elevations(
     groups = [name for name in ("forcing", "snow") if name in networks]
     # Reserve space inside this panel for its numeric y ticks and axis label;
     # neighboring map columns do not reserve room for a chart's decorations.
-    left = 0.23
+    left = 0.0 if fit_frame else 0.23
     gap = 0.14 if len(groups) == 2 else 0.0
     width = (0.98 - left - gap) / len(groups)
     children = []
     for index, name in enumerate(groups):
         table = networks[name]
-        child = ax.inset_axes([left + index * (width + gap), 0.0, width, 0.9])
+        child = ax.inset_axes(
+            [left + index * (width + gap), 0.0, width, 1.0 if fit_frame else 0.9]
+        )
         color = FORCING_STATION_COLOR if name == "forcing" else SNOW_STATION_COLOR
         child.bar(
             table["rank"],
@@ -135,9 +138,29 @@ def draw_station_elevations(
         )
         child.set_xlim(0.5, len(table) + 0.5)
         child.set_ylim(lower, upper + 0.06 * span)
-        child.set_title(f"{name.title()} (n={len(table)})", fontsize=tick_size, pad=3)
-        ticks = sorted({1, max(1, round(len(table) / 2)), len(table)})
-        child.set_xticks(ticks)
+        if fit_frame:
+            child.text(
+                0.04,
+                0.96,
+                f"{name.title()} (n={len(table)})",
+                transform=child.transAxes,
+                fontsize=tick_size,
+                va="top",
+                bbox={
+                    "facecolor": "white",
+                    "edgecolor": "none",
+                    "alpha": 0.85,
+                    "pad": 1,
+                },
+            )
+        else:
+            child.set_title(
+                f"{name.title()} (n={len(table)})", fontsize=tick_size, pad=3
+            )
+        child.set_xlim(0, len(table) + 0.5)
+        child.xaxis.set_major_locator(
+            MaxNLocator(nbins=4, integer=True, steps=[1, 2, 5, 10])
+        )
         child.yaxis.set_major_locator(MaxNLocator(nbins=4, integer=True))
         child.tick_params(labelsize=tick_size, length=2, pad=2, labelleft=index == 0)
         if index == 0:
@@ -150,7 +173,7 @@ def draw_station_elevations(
         children.append(child)
     ax.text(
         (left + 0.98) / 2,
-        -0.17,
+        -0.25 if fit_frame else -0.17,
         "Station count",
         transform=ax.transAxes,
         ha="center",

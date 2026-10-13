@@ -154,3 +154,70 @@ def test_invalid_source_in_map_recipe(tmp_path):
     )
     with pytest.raises(ValueError, match="forcing, snow or both"):
         load_project_maps_config(path)
+
+
+def test_viridis_palette_regular_ticks_and_full_frames(stations):
+    from matplotlib.colors import to_rgba
+    from openamundsen_da.methods.viz.maps.station_markers import (
+        FORCING_STATION_COLOR,
+        SNOW_STATION_COLOR,
+    )
+
+    fig, host = plt.subplots()
+    try:
+        axes = draw_station_elevations(
+            host, prepare_station_elevations(*stations), fit_frame=True
+        )
+        fig.canvas.draw()
+        for child, color in zip(
+            axes, [FORCING_STATION_COLOR, SNOW_STATION_COLOR], strict=True
+        ):
+            np.testing.assert_allclose(child.patches[0].get_facecolor(), to_rgba(color))
+            ticks = child.get_xticks()
+            assert np.allclose(np.diff(ticks), np.diff(ticks)[0])
+            assert child.get_position().y0 == pytest.approx(host.get_position().y0)
+            assert child.get_position().y1 == pytest.approx(host.get_position().y1)
+        assert FORCING_STATION_COLOR == "#440154"
+        assert SNOW_STATION_COLOR == "#22a884"
+    finally:
+        plt.close(fig)
+
+
+def test_spanning_frame_layout_and_extent_reference(tmp_path):
+    from openamundsen_da.methods.viz.maps.frames import configure_frames
+
+    path = tmp_path / "maps.yml"
+    path.write_text("""maps:
+  study:
+    title: Study
+    layout: {nrows: 2, ncols: 2, width_ratios: [2, 1], alignment: frames}
+    row_views:
+      - {row: 0, center: [0, 0], zoom: 10, center_crs: 'EPSG:25832'}
+      - {row: 1, center: [0, 0], zoom: 10, center_crs: 'EPSG:25832'}
+    panels:
+      - {row: 0, col: 0, rowspan: 2, kind: dem, name: domain, field_extent: full}
+      - {row: 0, col: 1, kind: overview, scale: 6500000, overview_style: gray, extent_panel: domain, show_subdomain_boundaries: false}
+      - {row: 1, col: 1, kind: station_elevations}
+""")
+    recipe = load_project_maps_config(path).maps[0]
+    fig = plt.figure()
+    try:
+        positions = configure_frames(
+            fig, recipe, {0: (0, 200, 0, 100), 1: (0, 200, 0, 100)}
+        )
+        a, b, c = positions
+        assert a[1] + a[3] == pytest.approx(b[1] + b[3])
+        assert a[1] == pytest.approx(c[1])
+        assert b[3] == pytest.approx(c[3])
+        assert a[2] / b[2] == pytest.approx(2)
+        w, h = fig.get_size_inches()
+        assert a[3] * h / (a[2] * w) == pytest.approx(0.5)
+        assert w * 2.54 == pytest.approx(17.4)
+        assert recipe.panels[1].show_subdomain_boundaries is False
+    finally:
+        plt.close(fig)
+    path.write_text(
+        path.read_text().replace("extent_panel: domain", "extent_panel: missing")
+    )
+    with pytest.raises(ValueError, match="extent_panel"):
+        load_project_maps_config(path)

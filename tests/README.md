@@ -503,3 +503,6 @@ maps while selecting only the three primary WSLA rows for the DA7 manuscript
 map. The DA8 manuscript map remains unfiltered. The validator requires the
 station altitudes distributed by the upstream Rofental example, including
 2659 m for Proviantdepot.
+
+Station-elevation tests also cover viridis colors, regular count ticks, full-height
+chart frames, row-spanning aspect preservation and overview extent references.

@@ -231,7 +231,7 @@ def _draw_station_category_entry(ax, *, y: float, kind: str, label: str) -> floa
     return y - 0.23
 
 
-def draw_station_categories(ax, *, y: float) -> float:
+def draw_station_categories(ax, *, y: float, include_holdout: bool = True) -> float:
     """Draw the fixed station-source and role legend."""
     entries = (
         ("forcing", "Forcing station"),
@@ -240,6 +240,8 @@ def draw_station_categories(ax, *, y: float) -> float:
         ("holdout", "Holdout snow station"),
     )
     for kind, label in entries:
+        if kind == "holdout" and not include_holdout:
+            continue
         y = _draw_station_category_entry(ax, y=y, kind=kind, label=label)
     return y
 
@@ -431,7 +433,7 @@ def _draw_legend_items_on_axis(
             if context_label == "below-panel":
                 y = draw_station_categories_below(ax, y=y)
             else:
-                y = draw_station_categories(ax, y=y)
+                y = draw_station_categories(ax, y=y, include_holdout=item.source != "networks")
         elif item.kind == "source_legend":
             if item.label:
                 y = draw_heading(ax, y=y, text=str(item.label))

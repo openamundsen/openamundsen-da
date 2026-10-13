@@ -864,6 +864,7 @@ def attach_colorbar(
     ticks: tuple[float, ...] = (),
     ticklabels: tuple[str, ...] = (),
     layout: str,
+    compact: bool = False,
 ) -> None:
     if layout == "horizontal":
         gap_axes = horizontal_colorbar_gap_axes(ax)
@@ -910,9 +911,9 @@ def attach_colorbar(
     if title and _POSTER_VERTICAL_COLORBAR_UNIT_HEADER_ENABLED:
         container_ax = ax.inset_axes(
             [
-                1.0 + _VERTICAL_COLORBAR_XOFFSET_AXES,
+                1.0 + (0.025 if compact else _VERTICAL_COLORBAR_XOFFSET_AXES),
                 _POSTER_VERTICAL_COLORBAR_CONTAINER_BOTTOM_AXES,
-                _VERTICAL_COLORBAR_WIDTH_AXES,
+                0.025 if compact else _VERTICAL_COLORBAR_WIDTH_AXES,
                 _POSTER_VERTICAL_COLORBAR_CONTAINER_HEIGHT_AXES,
             ],
             transform=ax.transAxes,
@@ -929,9 +930,9 @@ def attach_colorbar(
     else:
         cax = ax.inset_axes(
             [
-                1.0 + _VERTICAL_COLORBAR_XOFFSET_AXES,
+                1.0 + (0.025 if compact else _VERTICAL_COLORBAR_XOFFSET_AXES),
                 _VERTICAL_COLORBAR_BOTTOM_AXES,
-                _VERTICAL_COLORBAR_WIDTH_AXES,
+                0.025 if compact else _VERTICAL_COLORBAR_WIDTH_AXES,
                 _VERTICAL_COLORBAR_HEIGHT_AXES,
             ],
             transform=ax.transAxes,
