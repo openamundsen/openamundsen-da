@@ -530,13 +530,13 @@ Add `{kind: subdomain_boundary, placement: inside, anchor: top_left}` to the
 same legend to show the native boundary line and halo. Combined network and
 boundary entries have equal row spacing and height based on their actual count.
 Panel options `inside_legend_alpha` (default `0.70`, range 0–1) and
-`inside_legend_offset_x` (default `0`, fraction of panel width shifted right)
+`inside_legend_offset_x` (default `0`, signed fraction of panel width; negative shifts left)
 control the white background and position. An offset placing the legend outside
 the panel is rejected. For example:
 
 ```yaml
 inside_legend_alpha: 0.94
-inside_legend_offset_x: 0.10
+inside_legend_offset_x: -0.026
 legend_items:
   - {kind: station_categories, source: networks, placement: inside, anchor: top_left}
   - {kind: subdomain_boundary, placement: inside, anchor: top_left}

@@ -445,10 +445,10 @@ def _parse_row_views(value: object, *, context: str, nrows: int) -> tuple[MapRow
     return tuple(views)
 
 
-def _unit_interval(value: object, *, default: float, context: str) -> float:
+def _bounded_float(value: object, *, default: float, context: str, minimum: float = 0) -> float:
     number = default if value is None else float(value)
-    if not math.isfinite(number) or not 0 <= number <= 1:
-        raise ValueError(f"{context} must be between 0 and 1")
+    if not math.isfinite(number) or not minimum <= number <= 1:
+        raise ValueError(f"{context} must be between {minimum:g} and 1")
     return number
 
 
@@ -498,8 +498,8 @@ def _parse_panel(value: object, *, context: str) -> MapPanelSpec:
             context=f"{context}.below_items",
             default_placement="below",
         ),
-        inside_legend_alpha=_unit_interval(mapping.get("inside_legend_alpha"), default=0.70, context=f"{context}.inside_legend_alpha"),
-        inside_legend_offset_x=_unit_interval(mapping.get("inside_legend_offset_x"), default=0.0, context=f"{context}.inside_legend_offset_x"),
+        inside_legend_alpha=_bounded_float(mapping.get("inside_legend_alpha"), default=0.70, context=f"{context}.inside_legend_alpha"),
+        inside_legend_offset_x=_bounded_float(mapping.get("inside_legend_offset_x"), default=0.0, minimum=-1, context=f"{context}.inside_legend_offset_x"),
         legend_items=_parse_legend_items(
             mapping.get("legend_items"),
             context=f"{context}.legend_items",

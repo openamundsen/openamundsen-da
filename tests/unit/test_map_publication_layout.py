@@ -250,7 +250,10 @@ def test_frame_column_gap_is_opt_in():
         _parse_layout({"nrows": 1, "ncols": 1, "column_gap_in": -1}, context="layout")
 
 
-def test_compact_network_and_boundary_legend_has_even_rows_and_configured_background():
+@pytest.mark.parametrize("offset", [0.10, -0.026])
+def test_compact_network_and_boundary_legend_has_even_rows_and_configured_background(
+    offset,
+):
     fig, ax = plt.subplots(figsize=(6, 4))
     try:
         panel = MapPanelSpec(
@@ -258,7 +261,7 @@ def test_compact_network_and_boundary_legend_has_even_rows_and_configured_backgr
             row=0,
             col=0,
             inside_legend_alpha=0.94,
-            inside_legend_offset_x=0.10,
+            inside_legend_offset_x=offset,
             legend_items=(
                 LegendItemSpec(
                     kind="station_categories", source="networks", placement="inside"
@@ -284,10 +287,10 @@ def test_compact_network_and_boundary_legend_has_even_rows_and_configured_backgr
             [0.875, 0.625, 0.375, 0.125]
         )
         assert legend.get_facecolor() == pytest.approx((1, 1, 1, 0.94))
-        offset = (
+        actual_offset = (
             legend.get_position().x0 - ax.get_position().x0
         ) / ax.get_position().width
-        assert offset == pytest.approx(0.126)
+        assert actual_offset == pytest.approx(0.026 + offset)
         assert legend.lines[0].get_color() == panel_renderers._SUBDOMAIN_BOUNDARY_COLOR
         assert (
             legend.lines[0].get_linewidth() == panel_renderers._SUBDOMAIN_BOUNDARY_WIDTH
@@ -327,7 +330,7 @@ def test_smaller_row_gap_enlarges_both_right_frames_without_distorting_detail():
 def test_inside_legend_controls_reject_invalid_values(key):
     from openamundsen_da.methods.viz.maps.config import _parse_panel
 
-    with pytest.raises(ValueError, match="between 0 and 1"):
+    with pytest.raises(ValueError, match="must be between"):
         _parse_panel({"kind": "dem", "row": 0, "col": 0, key: 1.1}, context="panel")
 
 

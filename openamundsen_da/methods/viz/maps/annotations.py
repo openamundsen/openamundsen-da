@@ -588,7 +588,7 @@ def draw_panel_inside_items(
             legend_source_handles_getter=legend_source_handles_getter,
         )
         x0 += panel.inside_legend_offset_x
-        if x0 + width > 1.0:
+        if x0 < 0.0 or x0 + width > 1.0:
             raise ValueError("Inside legend offset places the legend outside its panel")
         legend_ax = ax.inset_axes(
             [x0, y0, width, height],
