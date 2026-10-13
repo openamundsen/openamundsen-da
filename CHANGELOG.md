@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Add recipe-specific frame row gaps, native subdomain-boundary legend keys,
+  and inside-legend opacity and horizontal positioning controls.
+- Add recipe-specific column gaps for aligned frames and align station-count
+  subtitles with neighboring horizontal colorbars.
+- Add opt-in aligned map/chart frames, full-extent DEM display and gray overview
+  silhouettes with a referenced detail-panel extent rectangle.
+- Add reusable station-elevation ranked bar plots and a `station_elevations`
+  project-map panel for forcing, snow or both networks, preserving colocated
+  records and selecting metadata elevations within the displayed extent.
 - Add opt-in project-map markers that distinguish forcing, snow-observation,
   co-located and holdout stations, with holdouts using a smaller black `x`
   rendered above other station markers, plus optional subdomain ID labels.
@@ -30,6 +39,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   keeping scientific manifests, weights, logs and compact consumers durable.
 
 ### Changed
+- Use yellow/blue for forcing/snow station symbols and elevation bars;
+  show regular integer station-count ticks.
 - Derive live project-size telemetry from storage-ledger materialized/removed
   byte counters after one baseline scan, downsample growing PNG histories,
   break curves across monitor gaps and retain a companion workflow-phase
@@ -91,6 +102,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the accepted leaf project YAMLs.
 
 ### Fixed
+- Export aligned map frames with tight decorated bounds at the requested width
+  without stretching maps; remove unused station-legend rows and center vertical
+  colorbar units with physical spacing while retaining endpoint labels.
+- Draw snow and colocated station markers above forcing-only markers independent
+  of inventory order.
+- Upgrade the pinned container base's Perl package to Debian's security-fixed
+  version `5.36.0-7+deb12u4` to address critical vulnerabilities detected by CI.
 - Keep large compact-retention batches fail-closed without rehashing the same
   retained NetCDF before every source unlink. Consumers are fully hash-checked
   at batch entry and completion and pinned by mutation-sensitive file identity

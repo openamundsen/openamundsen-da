@@ -42,6 +42,11 @@ image tracks the latest green `main` commit and is not a release.
 
 ## Command-line workflow
 
+Project-map recipes can include elevation-ranked forcing and snow-station bars
+with `kind: station_elevations`. See the
+[configuration guide](docs/guides/configuration.md#station-elevation-map-panels)
+for standalone and mixed-map use, metadata requirements and counting semantics.
+
 The installed distribution exposes one command, `openamundsen-da`:
 
 ```text
@@ -132,3 +137,7 @@ openAMUNDSEN, EGUsphere [preprint],
 
 openAMUNDSEN-DA is released under the [MIT License](LICENSE), including
 commercial use subject to the license terms.
+
+Map recipes support opt-in aligned detail/overview/chart frames and full-extent
+DEM backgrounds. Forcing and snow station symbols and elevation bars share a
+viridis green/yellow palette; see the [map recipe guide](docs/guides/configuration.md#aligned-detail-map-overview-and-station-charts).

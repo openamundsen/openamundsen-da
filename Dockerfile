@@ -10,12 +10,12 @@ LABEL org.opencontainers.image.version="${VERSION}"
 ARG MAMBA_DOCKERFILE_ACTIVATE=1
 SHELL ["/bin/bash", "-lc"]
 
-# The pinned base predates two critical GnuTLS fixes. Keep the package version
+# The pinned base predates critical GnuTLS and Perl fixes. Keep package versions
 # explicit so container builds fail instead of silently accepting a regression.
 USER root
 RUN apt-get update && \
     apt-get install -y --no-install-recommends --only-upgrade \
-        libgnutls30=3.7.9-2+deb12u7 && \
+        libgnutls30=3.7.9-2+deb12u7 perl-base=5.36.0-7+deb12u4 && \
     rm -rf /var/lib/apt/lists/*
 USER mambauser
 

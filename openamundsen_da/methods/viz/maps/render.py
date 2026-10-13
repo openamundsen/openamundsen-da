@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from contextlib import ExitStack, contextmanager
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
+import json
 from pathlib import Path
 from string import ascii_lowercase
 
@@ -37,6 +38,10 @@ from openamundsen_da.methods.viz.maps.annotations import (
 )
 import openamundsen_da.methods.viz.maps.layout as _layout_module
 from openamundsen_da.methods.viz.maps.config import MapRecipe
+from openamundsen_da.methods.viz.plots.station_elevations import (
+    draw_station_elevations,
+    prepare_station_elevations,
+)
 from openamundsen_da.methods.viz.maps.data import (
     ModelFields,
     ObservationScene,
@@ -384,13 +389,14 @@ def _draw_panel_legend_items(ax, *, panel, artifacts: dict[str, dict[str, object
     )
 
 
-def _render_overview_panel(ax, *, panel, context, label, defaults):
+def _render_overview_panel(ax, *, panel, context, label, defaults, detail_extent=None):
     return render_overview_panel(
         ax,
         panel=panel,
         context=context,
         label=label,
         defaults=defaults,
+        detail_extent=detail_extent,
         boundaries_loader=load_overview_boundaries,
         regions_loader=load_overview_regions,
         labels_loader=load_overview_labels,
@@ -519,6 +525,25 @@ def _render_panel(
 ) -> dict[str, object]:
     if panel.kind == "overview":
         return _render_overview_panel(ax, panel=panel, context=context, label=label, defaults=defaults)
+    if panel.kind == "station_elevations":
+        networks = prepare_station_elevations(
+            context.stations, context.snow_stations, source=panel.source or "both", extent=extent
+        )
+        children = draw_station_elevations(
+            ax,
+            networks,
+            label_size=_layout_module._LABEL_SIZE_OVERRIDE or 8.0 * _layout_module._STYLE_SCALE,
+            tick_size=_layout_module._TICK_SIZE,
+            show_grid=panel.show_grid if panel.show_grid is not None else True,
+            fit_frame=panel.fit_frame,
+            show_elevation_label=panel.show_elevation_label,
+        )
+        for child in children:
+            _layout_module.register_child_axes(ax, child)
+        _layout_module.draw_axes_title(
+            ax, _panel_title(label, panel.title or "Elevations of marked stations")
+        )
+        return {"station_elevations": networks, "axes": children}
     if panel.kind == "roi":
         return _render_roi_panel(ax, panel=panel, context=context, extent=extent, label=label, defaults=defaults)
     if panel.kind in {"hillshade", "dem", "aspect", "svf", "srf", "landcover"}:
@@ -714,6 +739,12 @@ def render_map_recipe(
         figure_title_size = _layout_module._TITLE_SIZE_OVERRIDE or 8.6 * _layout_module._STYLE_SCALE
         title_artist = fig.suptitle(recipe.figure_title, y=0.988, fontsize=figure_title_size)
 
+    frame_positions = None
+    if recipe.layout.alignment == "frames":
+        from openamundsen_da.methods.viz.maps.frames import configure_frames
+
+        frame_positions = configure_frames(fig, recipe, row_extents)
+
     title_letters = iter(ascii_lowercase)
     panel_labels: list[str | None] = [
         None if panel.kind in _SUPPORT_PANEL_KINDS else next(title_letters)
@@ -731,11 +762,17 @@ def render_map_recipe(
                 _grid_span(panel.col, panel.colspan),
             ]
         )
+        if frame_positions is not None:
+            ax.set_position(frame_positions[idx])
+            panel = replace(panel, fit_frame=True)
         axes.append(ax)
         row_axes[int(panel.row)].append(ax)
         key = panel.name or f"panel_{idx}"
 
-        if panel.kind == "colorbar":
+        if panel.kind == "overview" and (panel.extent_panel or panel.extent_source):
+            detail_extent = _grid_extent(context) if panel.extent_source == "model_grid" else row_extents[next(p.row for p in recipe.panels if p.name == panel.extent_panel)]
+            artifacts[key] = _render_overview_panel(ax, panel=panel, context=context, label=panel_labels[idx], defaults=recipe.defaults, detail_extent=detail_extent)
+        elif panel.kind == "colorbar":
             artifacts[key] = _render_colorbar_panel(ax, panel=panel, artifacts=artifacts)
         elif panel.kind == "legend":
             artifacts[key] = _render_legend_panel(ax, panel=panel, artifacts=artifacts)
@@ -760,7 +797,8 @@ def render_map_recipe(
         if panel.bottom_legend_items or panel.inside_legend_items:
             _draw_panel_legend_items(ax, panel=panel, artifacts=artifacts)
 
-    _tighten_panel_row_gaps(fig, row_axes)
+    if frame_positions is None:
+        _tighten_panel_row_gaps(fig, row_axes)
     if recipe.row_labels:
         for row_idx, row_label in enumerate(recipe.row_labels):
             current_row_axes = row_axes.get(row_idx) or []
@@ -783,9 +821,33 @@ def render_map_recipe(
         if populated_axes:
             top_row = _decorated_axes_top(fig, populated_axes)
             title_artist.set_y(min(1.03, top_row + _figure_title_gap(fig, populated_axes)))
+    if frame_positions is not None:
+        from openamundsen_da.methods.viz.maps.frames import align_bottom_annotations
+
+        align_bottom_annotations(fig, axes)
     force_figure_text_black(fig, axes)
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    save_figure_png(fig, output_path, bbox_inches="tight", pad_inches=0.0, target_size_in=target_size_in)
+    save_figure_png(
+        fig, output_path, bbox_inches="tight", pad_inches=0.0,
+        target_size_in=target_size_in,
+        target_width_in=recipe.layout.width_cm / 2.54 if frame_positions is not None else None,
+    )
+    if frame_positions is not None:
+        fig.canvas.draw()
+        geometry = {"figure_size_inches": fig.get_size_inches().tolist(), "panels": []}
+        for panel, ax in zip(recipe.panels, axes, strict=True):
+            key = panel.name or "panel_" + str(len(geometry["panels"]))
+            artifact = artifacts[key]
+            geometry["panels"].append({
+                "kind": panel.kind, "title": ax.get_title(loc="left"),
+                "bounds": list(ax.get_position().bounds),
+                "extent": artifact.get("extent", row_extents[panel.row]) if panel.kind != "station_elevations" else None,
+                "colorbar_bounds": [list(child.get_position().bounds) for child in ax.child_axes if child.get_gid() == "oa_da_horizontal_colorbar"],
+                "count_label_y": [ax.get_position().y0 + text.get_position()[1] * ax.get_position().height for text in ax.texts if text.get_gid() == "oa_da_station_count"],
+                "chart_bounds": [list(child.get_position().bounds) for child in artifact.get("axes", ())],
+                "detail_extent": _grid_extent(context) if panel.extent_source == "model_grid" else (row_extents[next(p.row for p in recipe.panels if p.name == panel.extent_panel)] if panel.extent_panel else None),
+            })
+        output_path.with_suffix(".layout.json").write_text(json.dumps(geometry, indent=2) + "\n")
     plt.close(fig)
     return output_path
 

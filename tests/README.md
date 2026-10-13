@@ -2,6 +2,11 @@
 
 This folder documents the current regression-testing setup for `openamundsen_da`.
 
+`tests/unit/test_station_elevations.py` covers elevation sorting, extent selection,
+colocated records, metadata errors, independent network ranks and embedding in
+project maps without assimilation events. Run it together with
+`tests/unit/test_project_maps.py` for map changes.
+
 ## Recommended Workflow (Single Developer, Private Repo)
 
 1. Start from `main` and create a feature branch.
@@ -498,3 +503,10 @@ maps while selecting only the three primary WSLA rows for the DA7 manuscript
 map. The DA8 manuscript map remains unfiltered. The validator requires the
 station altitudes distributed by the upstream Rofental example, including
 2659 m for Proviantdepot.
+
+Station-elevation tests also cover viridis colors, regular count ticks, full-height
+chart frames, row-spanning aspect preservation and overview extent references.
+
+`tests/unit/test_map_publication_layout.py` checks proportional tight PNG export,
+colorbar endpoint/header spacing, three/four-entry legends, snow marker priority
+and optional station-chart y-axis titles.

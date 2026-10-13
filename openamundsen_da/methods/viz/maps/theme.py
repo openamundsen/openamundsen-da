@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from openamundsen_da.methods.viz.maps.station_markers import FORCING_STATION_COLOR
+
 
 _FIGURE_HEIGHT_MIN = 2.9
 _FIGURE_HEIGHT_MAX = 16.5
@@ -17,7 +19,7 @@ _COLORBAR_TITLE_SIZE = 6.6
 _SUPPORT_PANEL_KINDS = {"colorbar", "legend"}
 _ROI_FILL = "#efefef"
 _OVERVIEW_ROI_COLOR = "#c21f24"
-_STATION_COLOR = _OVERVIEW_ROI_COLOR
+_STATION_COLOR = FORCING_STATION_COLOR
 _SUBDOMAIN_BOUNDARY_COLOR = "#222222"
 _SUBDOMAIN_BOUNDARY_HALO_COLOR = "white"
 _SUBDOMAIN_BOUNDARY_WIDTH = 0.58

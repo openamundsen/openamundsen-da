@@ -3776,8 +3776,8 @@ def test_overview_roi_polygon_uses_reference_red() -> None:
     assert _OVERVIEW_ROI_COLOR == "#c21f24"
 
 
-def test_map_station_marker_uses_reference_red() -> None:
-    assert _STATION_COLOR == _OVERVIEW_ROI_COLOR
+def test_map_station_marker_uses_viridis_forcing_color() -> None:
+    assert _STATION_COLOR == "#dce317"
 
 
 def test_wet_snow_reference_colors_follow_example_palette() -> None:
@@ -6015,3 +6015,61 @@ def test_project_maps_cli_logs_recipe_attributed_failure(monkeypatch: pytest.Mon
         "Project maps rendering failed: custom map 'broken_map' failed: boom",
         f"Rerun project maps with: python -m openamundsen_da.methods.viz.maps.runner --project-dir {project_dir}",
     ]
+
+
+def test_gray_overview_frame_and_exact_detail_rectangle(tmp_path, monkeypatch):
+    from matplotlib.colors import to_rgba
+
+    _setup_dir, project_dir = _build_project_fixture(tmp_path)
+    context = load_static_context(project_dir)
+    regions = gpd.GeoDataFrame(
+        {"CNTR_ID": ["AT"]}, geometry=[box(-90000, -90000, 90000, 90000)], crs="EPSG:25832"
+    )
+    labels = gpd.GeoDataFrame(
+        {"CNTR_ID": ["AT"], "NAME_ENGL": ["Austria"]}, geometry=[Point(10000, 10000)], crs="EPSG:25832"
+    )
+    monkeypatch.setattr(render_module, "load_overview_boundaries", lambda **kw: regions.boundary.to_frame('geometry').set_crs(regions.crs))
+    monkeypatch.setattr(render_module, "load_overview_regions", lambda **kw: regions)
+    monkeypatch.setattr(render_module, "load_overview_labels", lambda **kw: labels)
+    def forbidden_boundaries(*args, **kwargs):
+        raise AssertionError("Internal boundaries must be omitted")
+    monkeypatch.setattr(panel_renderers_module, "draw_subdomain_boundaries", forbidden_boundaries)
+    fig, ax = plt.subplots(figsize=(5, 2))
+    detail = (0, 400, 0, 400)
+    original = ax.get_position().bounds
+    try:
+        artifact = render_module._render_overview_panel(
+            ax, panel=MapPanelSpec(kind="overview", row=0, col=0, scale=1800000,
+                                  overview_style="gray", show_subdomain_boundaries=False, fit_frame=True),
+            context=context, label="b", defaults=MapDefaults(), detail_extent=detail,
+        )
+        fig.canvas.draw()
+        np.testing.assert_allclose(ax.get_position().bounds, original)
+        rectangle = ax.patches[0]
+        assert rectangle.get_bbox().bounds == (0, 0, 400, 400)
+        np.testing.assert_allclose(rectangle.get_facecolor(), to_rgba('#dedede'))
+        np.testing.assert_allclose(ax.collections[-1].get_facecolors()[0], to_rgba('#858585'))
+        xmin, xmax, ymin, ymax = artifact['extent']
+        assert (ymax-ymin)/(xmax-xmin) == pytest.approx(original[3]*2/(original[2]*5))
+    finally:
+        plt.close(fig)
+
+
+def test_full_dem_retains_pixels_outside_roi(tmp_path):
+    _setup_dir, project_dir = _build_project_fixture(tmp_path)
+    context = load_static_context(project_dir)
+    context.roi_mask[0, 0] = False
+    fig, axes = plt.subplots(1, 2)
+    try:
+        arrays = []
+        for ax, field_extent in zip(axes, ['roi', 'full'], strict=True):
+            artifact = render_module._render_static_panel(
+                ax, panel=MapPanelSpec(kind='dem', row=0, col=0, field_extent=field_extent, show_colorbar=False),
+                context=context, extent=buffered_extent(context), label=None,
+                defaults=MapDefaults(), figure_horizontal_default=False, derived_cache={},
+            )
+            arrays.append(artifact['mappable'].get_array())
+        assert np.ma.getmaskarray(arrays[0])[0, 0]
+        assert not np.ma.getmaskarray(arrays[1])[0, 0]
+    finally:
+        plt.close(fig)

@@ -432,3 +432,125 @@ Typical early failures:
 - Keep data assimilation experimentation and observation mappings in project YAML.
 - Use one project per experiment/time span.
 - Keep `assimilation_events` explicit and versioned in each project.
+
+## Station-elevation map panels
+
+An opt-in `station_elevations` panel in a project's `maps.yml` displays
+metadata elevations as ascending bars. `source` accepts `forcing`, `snow`
+or `both` (the default). This one-panel recipe produces a standalone chart;
+the same panel can accompany `roi` and `overview` panels in a mixed figure.
+
+```yaml
+maps:
+  station_elevations:
+    title: Station elevations
+    output_name: station_elevations
+    layout: {nrows: 1, ncols: 1}
+    panels:
+      - row: 0
+        col: 0
+        kind: station_elevations
+        source: both
+        show_grid: true
+```
+
+The panel uses the existing setup forcing inventory and project snow-station
+metadata (`obs.stations.dir`). It selects records within the recipe's row
+extent, including boundary points. The required `alt` field supplies elevation
+in metres; values are not sampled from the DEM. Records are sorted by elevation,
+then ID. Colocated records remain distinct, including records shared across
+the two source inventories. Each source has its own rank/count axis and the
+groups share elevation limits. Station counts describe the input inventory,
+not temporal completeness or independent measurement locations.
+
+Missing IDs, duplicate IDs within a network, invalid coordinates, missing or
+nonfinite selected elevations and empty requested networks raise errors.
+Use `source: forcing` or `source: snow` explicitly when only one inventory exists.
+The plotting functions `prepare_station_elevations` and
+`draw_station_elevations` in `openamundsen_da.methods.viz.plots.station_elevations`
+also support drawing into an existing Matplotlib axes without project-map
+or assimilation-event orchestration.
+
+For a prepared setup without assimilation events, static map recipes can be
+rendered directly without simulating a project:
+
+```python
+from pathlib import Path
+from openamundsen_da.methods.viz.maps.config import load_project_maps_config
+from openamundsen_da.methods.viz.maps.data import load_static_context
+from openamundsen_da.methods.viz.maps.render import render_map_recipe
+
+project = Path("/path/to/setup/projects/project_name")
+context = load_static_context(project)
+for recipe in load_project_maps_config(project / "maps.yml").maps:
+    render_map_recipe(
+        project_dir=project, context=context, recipe=recipe,
+        output_path=project / "results/maps" / f"{recipe.output_stem}.png",
+    )
+```
+
+The standard map exporter supplies the shared 600 dpi PNG output. No new
+CLI command or changes to existing map layout defaults are required.
+
+### Aligned detail map, overview and station charts
+
+Use `layout: {nrows: 2, ncols: 2, width_ratios: [2, 1], alignment: frames,
+width_cm: 17.4}` for physical frame alignment. A detail map with `rowspan: 2`
+occupies the left column; an overview and station-elevation panel occupy the
+right rows. The canvas height follows the first detail map's geographic aspect,
+with physical space reserved for titles, colorbars and axis labels. Maps retain
+undistorted coordinates. `alignment: native` remains the default. With frame
+alignment, `width_cm` controls the final tightly cropped export width instead of
+`target_size_in`. Canvas dimensions scale proportionally to preserve map aspects;
+there is no PNG resampling or padding. The height follows the decorated content.
+Explicit row views spanned by a panel must have identical view settings.
+Set `layout.column_gap_in` and `layout.row_gap_in` to positive physical gaps in inches
+(defaults `0.82` and `0.62`)
+for frame layouts. Smaller gaps enlarge the frames and can reclaim space when the DEM uses
+`legend: horizontal` below its frame. Station-count subtitles on the same bottom
+row align with the horizontal colorbar center. Native layout spacing is unchanged.
+
+For DEM panels, `field_extent: full` shows valid elevation pixels outside the
+ROI as well; the default `roi` continues to mask them. Combine it with
+`show_hillshade: true` and `hillshade_extent: full` for continuous gray terrain.
+
+Overview panels accept `overview_style: gray` and
+`show_subdomain_boundaries: false` for a dissolved gray ROI silhouette. Add
+`extent_panel: domain` to show a light-gray rectangle for the displayed extent
+of a detail panel named `domain` in the same recipe. Native overview colors and
+internal boundaries remain the defaults. In frame layouts the overview expands
+its geographic extent to fit its frame while retaining native country labels.
+
+Forcing stations use yellow (`#dce317`); snow stations use blue
+(`#32648e`) throughout station maps, split symbols, legends and elevation bars.
+Other assimilation colors are unchanged. Station-elevation count axes use
+regular integer ticks; headings retain exact record counts. An inside
+`station_categories` legend can use `source: networks` to omit the holdout key.
+Add `{kind: subdomain_boundary, placement: inside, anchor: top_left}` to the
+same legend to show the native boundary line and halo. Combined network and
+boundary entries have equal row spacing and height based on their actual count.
+Panel options `inside_legend_alpha` (default `0.70`, range 0–1) and
+`inside_legend_offset_x` (default `0`, signed fraction of panel width; negative shifts left)
+control the white background and position. An offset placing the legend outside
+the panel is rejected. For example:
+
+```yaml
+inside_legend_alpha: 0.94
+inside_legend_offset_x: -0.026
+legend_items:
+  - {kind: station_categories, source: networks, placement: inside, anchor: top_left}
+  - {kind: subdomain_boundary, placement: inside, anchor: top_left}
+```
+
+Frame-aligned exports also write `<output_name>.layout.json`, recording final
+frame bounds, chart bounds, geographic extents and figure dimensions for validation.
+
+Use `extent_source: model_grid` on an overview to draw the actual model-grid
+rectangle independently of display padding. It is mutually exclusive with
+`extent_panel`. Set `show_elevation_label: false` on a station-elevation panel
+to omit its y-axis title while retaining numeric ticks and metadata elevations.
+
+Snow and colocated station symbols render above forcing-only symbols; holdouts
+retain the highest station layer. Station category legends size their rows from
+the selected entries. Vertical colorbar units are centered three points above
+the bar, with endpoint tick labels retained.

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 import math
 from pathlib import Path
 
@@ -8,6 +8,7 @@ from openamundsen_da.core.env import _read_yaml_file
 
 
 SUPPORTED_PANEL_KINDS = {
+    "station_elevations",
     "overview",
     "roi",
     "hillshade",
@@ -54,7 +55,7 @@ SUPPORTED_WET_SNOW_ELEVATION_FRACTION_SOURCES = {
     "posterior_probability",
 }
 SUPPORTED_UNCERTAINTY_OBSERVATIONS = {"scf", "wet_snow"}
-SUPPORTED_LEGEND_ITEM_KINDS = {"heading", "station_categories", "station_symbol", "source_legend", "scale_bar"}
+SUPPORTED_LEGEND_ITEM_KINDS = {"subdomain_boundary", "heading", "station_categories", "station_symbol", "source_legend", "scale_bar"}
 SUPPORTED_LEGEND_ITEM_PLACEMENTS = {"below", "inside"}
 SUPPORTED_LEGEND_ITEM_ANCHORS = {"top_left", "top_right", "bottom_left", "bottom_right"}
 SUPPORTED_PANEL_LEGEND_LAYOUTS = {"horizontal", "vertical"}
@@ -90,6 +91,10 @@ class LayoutSpec:
     ncols: int
     width_ratios: tuple[float, ...] = ()
     height_ratios: tuple[float, ...] = ()
+    alignment: str = "native"
+    width_cm: float = 17.4
+    column_gap_in: float = 0.82
+    row_gap_in: float = 0.62
 
 
 @dataclass(frozen=True)
@@ -125,10 +130,19 @@ class MapPanelSpec:
     scale: int | None = None
     label_fit_margin: float | None = None
     roi_label: str | None = None
+    overview_style: str = "native"
+    show_subdomain_boundaries: bool = True
+    extent_panel: str | None = None
+    extent_source: str | None = None
+    show_elevation_label: bool = True
+    fit_frame: bool = False
+    field_extent: str = "roi"
     lines: tuple[str, ...] = ()
     items: tuple[LegendItemSpec, ...] = ()
     below_items: tuple[LegendItemSpec, ...] = ()
     legend_items: tuple[LegendItemSpec, ...] = ()
+    inside_legend_alpha: float = 0.70
+    inside_legend_offset_x: float = 0.0
     show_colorbar: bool | None = None
     show_scalebar: bool | None = None
     show_grid: bool | None = None
@@ -398,7 +412,10 @@ def _parse_layout(value: object, *, context: str) -> LayoutSpec:
         raise ValueError(f"{context}.width_ratios must have length {ncols}")
     if height_ratios and len(height_ratios) != nrows:
         raise ValueError(f"{context}.height_ratios must have length {nrows}")
-    return LayoutSpec(nrows=nrows, ncols=ncols, width_ratios=width_ratios, height_ratios=height_ratios)
+    alignment = str(mapping.get("alignment", "native"))
+    if alignment not in {"native", "frames"}:
+        raise ValueError(f"{context}.alignment must be native or frames")
+    return LayoutSpec(row_gap_in=_optional_positive_float(mapping.get("row_gap_in"), context=f"{context}.row_gap_in") or 0.62, column_gap_in=_optional_positive_float(mapping.get("column_gap_in"), context=f"{context}.column_gap_in") or 0.82, nrows=nrows, ncols=ncols, alignment=alignment, width_cm=_optional_positive_float(mapping.get("width_cm"), context=f"{context}.width_cm") or 17.4, width_ratios=width_ratios, height_ratios=height_ratios)
 
 
 def _parse_row_views(value: object, *, context: str, nrows: int) -> tuple[MapRowViewSpec, ...]:
@@ -426,6 +443,13 @@ def _parse_row_views(value: object, *, context: str, nrows: int) -> tuple[MapRow
             )
         )
     return tuple(views)
+
+
+def _bounded_float(value: object, *, default: float, context: str, minimum: float = 0) -> float:
+    number = default if value is None else float(value)
+    if not math.isfinite(number) or not minimum <= number <= 1:
+        raise ValueError(f"{context} must be between {minimum:g} and 1")
+    return number
 
 
 def _parse_panel(value: object, *, context: str) -> MapPanelSpec:
@@ -461,6 +485,12 @@ def _parse_panel(value: object, *, context: str) -> MapPanelSpec:
         scale=_optional_positive_int(mapping.get("scale"), context=f"{context}.scale"),
         label_fit_margin=_optional_positive_float(mapping.get("label_fit_margin"), context=f"{context}.label_fit_margin"),
         roi_label=_optional_str(mapping.get("roi_label")),
+        overview_style=str(mapping.get("overview_style", "native")),
+        show_subdomain_boundaries=bool(_coerce_bool(mapping.get("show_subdomain_boundaries"), default=True)),
+        extent_panel=_optional_str(mapping.get("extent_panel")),
+        extent_source=_optional_str(mapping.get("extent_source")),
+        show_elevation_label=bool(_coerce_bool(mapping.get("show_elevation_label"), default=True)),
+        field_extent=str(mapping.get("field_extent", "roi")),
         lines=_coerce_str_list(mapping.get("lines"), context=f"{context}.lines"),
         items=_parse_legend_items(mapping.get("items"), context=f"{context}.items"),
         below_items=_parse_legend_items(
@@ -468,6 +498,8 @@ def _parse_panel(value: object, *, context: str) -> MapPanelSpec:
             context=f"{context}.below_items",
             default_placement="below",
         ),
+        inside_legend_alpha=_bounded_float(mapping.get("inside_legend_alpha"), default=0.70, context=f"{context}.inside_legend_alpha"),
+        inside_legend_offset_x=_bounded_float(mapping.get("inside_legend_offset_x"), default=0.0, minimum=-1, context=f"{context}.inside_legend_offset_x"),
         legend_items=_parse_legend_items(
             mapping.get("legend_items"),
             context=f"{context}.legend_items",
@@ -506,12 +538,27 @@ def _parse_panel(value: object, *, context: str) -> MapPanelSpec:
             supported = ", ".join(sorted(SUPPORTED_LANDCOVER_GROUPINGS))
             raise ValueError(f"{context}.landcover_grouping must be one of: {supported}")
 
+    if panel.overview_style not in {"native", "gray"}:
+        raise ValueError(f"{context}.overview_style must be native or gray")
+    if panel.field_extent not in {"roi", "full"}:
+        raise ValueError(f"{context}.field_extent must be roi or full")
+    if panel.field_extent == "full" and panel.kind != "dem":
+        raise ValueError(f"{context}.field_extent full is only supported for dem")
+    if panel.extent_source not in {None, "model_grid"}:
+        raise ValueError(f"{context}.extent_source must be model_grid")
+    if panel.extent_source and panel.extent_panel:
+        raise ValueError(f"{context}: use either extent_source or extent_panel")
+    if (panel.extent_source or panel.extent_panel or panel.overview_style != "native") and panel.kind != "overview":
+        raise ValueError(f"{context}: overview controls require kind overview")
     if panel.kind in {"snow_depth", "swe", "liquid_water_content"}:
         if panel.source is None:
             raise ValueError(f"{context}.source is required for {panel.kind}")
         if panel.source not in SUPPORTED_MODEL_SOURCES:
             supported = ", ".join(sorted(SUPPORTED_MODEL_SOURCES))
             raise ValueError(f"{context}.source must be one of: {supported}")
+    elif panel.kind == "station_elevations":
+        if panel.source is not None and panel.source not in {"forcing", "snow", "both"}:
+            raise ValueError(f"{context}.source must be forcing, snow or both for station_elevations")
     elif panel.kind == "overview":
         if panel.scale is None:
             raise ValueError(f"{context}.scale is required for overview panels")
@@ -556,6 +603,12 @@ def _parse_panel(value: object, *, context: str) -> MapPanelSpec:
 
 
 def _validate_panel_layout(recipe: MapRecipe, *, config_path: Path) -> None:
+    named = {p.name: p for p in recipe.panels if p.name}
+    if len(named) != sum(bool(p.name) for p in recipe.panels):
+        raise ValueError("Panel names must be unique")
+    for panel in recipe.panels:
+        if panel.extent_panel and (panel.extent_panel not in named or named[panel.extent_panel].kind in {"overview", "station_elevations", "legend", "colorbar"}):
+            raise ValueError("extent_panel must reference a named geographic detail panel")
     occupied: set[tuple[int, int]] = set()
     row_view_by_row = {view.row: view for view in recipe.row_views}
     for panel in recipe.panels:
@@ -564,7 +617,7 @@ def _validate_panel_layout(recipe: MapRecipe, *, config_path: Path) -> None:
         if panel.col + panel.colspan > recipe.layout.ncols:
             raise ValueError(f"Panel '{panel.kind}' exceeds layout columns in {config_path}")
         spanned_view_keys = {
-            row_view_by_row[row] if row in row_view_by_row else None
+            replace(row_view_by_row[row], row=0) if row in row_view_by_row else None
             for row in range(panel.row, panel.row + panel.rowspan)
         }
         if len(spanned_view_keys) > 1:
