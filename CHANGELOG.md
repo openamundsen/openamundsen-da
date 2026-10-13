@@ -94,6 +94,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the accepted leaf project YAMLs.
 
 ### Fixed
+- Upgrade the pinned container base's Perl package to Debian's security-fixed
+  version `5.36.0-7+deb12u4` to address critical vulnerabilities detected by CI.
 - Keep large compact-retention batches fail-closed without rehashing the same
   retained NetCDF before every source unlink. Consumers are fully hash-checked
   at batch entry and completion and pinned by mutation-sensitive file identity
