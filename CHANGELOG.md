@@ -30,6 +30,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   keeping scientific manifests, weights, logs and compact consumers durable.
 
 ### Changed
+- Extend hourly snow depth at Latschbloder and Proviantdepot to four Rofental
+  winters, preserving the original 2022/23 depth and SWE observations.
 - Extend the Rofental station forcing to 2019/20–2022/23 and remove the
   demonstration's 40% precipitation reduction. Runs using the new example
   will produce different snow simulations and may yield different benchmark
