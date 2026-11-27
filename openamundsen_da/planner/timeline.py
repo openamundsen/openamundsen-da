@@ -49,8 +49,7 @@ def plot_timeline(
                 count += 1
             variables.add(variable)
             groups[(i, variable, bool(actual))].append(date.fromisoformat(str(day)))
-        unit = "observation" if is_withheld else "scheduled update"
-        labels.append(f"{name}\n{count} {unit}{'' if count == 1 else 's'}")
+        labels.append(f"{name} ({count})")
     colors = {}
     offsets = {}
     for i, variable in enumerate(sorted(variables)):
@@ -84,6 +83,11 @@ def plot_timeline(
                 apply_month_interval_axis_labels(ax, (start, end))
             else:
                 ax.set_xticks([])
+            ax.set_xlabel(
+                "Parentheses give the number of scheduled updates or withheld observations. Crosses mark missed targets.",
+                loc="left",
+                fontsize=7,
+            )
             ax.tick_params(axis="y", length=0, labelsize=8)
             handles = [
                 Line2D(
