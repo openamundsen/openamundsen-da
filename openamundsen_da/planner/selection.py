@@ -198,7 +198,7 @@ def _compile_rule(row: Row, year: int) -> Rule:
     return rule
 
 
-def compile_rules(rows: Iterable[Row], year: int) -> list[Rule]:
+def compile_rules(rows: Iterable[Row], year: int, *, allow_empty: bool = False) -> list[Rule]:
     """Validate CSV/YAML rule rows and resolve relative calendar bounds."""
     rules = []
     periods = defaultdict(list)
@@ -229,7 +229,7 @@ def compile_rules(rows: Iterable[Row], year: int) -> list[Rule]:
             rules.append(rule)
         except (KeyError, ValueError, TypeError) as exc:
             raise ValueError(f"rules row {index}: {exc}") from exc
-    if not rules:
+    if not rules and not allow_empty:
         raise ValueError(f"no selection rules for {year}")
     return rules
 

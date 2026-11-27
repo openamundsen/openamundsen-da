@@ -1,0 +1,186 @@
+"""Resolve planning periods and named selection rules from a planner directory."""
+
+from __future__ import annotations
+
+from collections.abc import Iterable, Mapping
+from dataclasses import dataclass
+from datetime import date
+from pathlib import Path
+
+from ruamel.yaml import YAML
+from ruamel.yaml.error import YAMLError
+
+from openamundsen_da.planner.selection import Rule, compile_rules
+from openamundsen_da.planner.tables import read_rows
+from openamundsen_da.util.yaml_utils import read_yaml_mapping
+
+
+@dataclass(frozen=True)
+class PlanningPeriod:
+    """Inclusive dates and display label for one planning period."""
+
+    name: str
+    start: date
+    end: date
+
+
+def read_period(period_dir: Path) -> PlanningPeriod:
+    """Read and validate period.yml, using the directory name as the default label."""
+    directory = Path(period_dir).resolve()
+    path = directory / "period.yml"
+    config = read_yaml_mapping(path, error_cls=ValueError, context="planning period")
+    if config.keys() - {"start", "end", "label"} or not {"start", "end"} <= config.keys():
+        raise ValueError(f"{path}: expected start, end and optional label")
+    label = config.get("label", directory.name)
+    if not isinstance(label, str) or not label.strip():
+        raise ValueError(f"{path}: label must be nonempty text")
+    bounds = []
+    for key in ("start", "end"):
+        raw = str(config[key])
+        try:
+            day = date.fromisoformat(raw)
+            if day.isoformat() != raw:
+                raise ValueError
+        except ValueError as exc:
+            raise ValueError(f"{path}: {key} must be a YYYY-MM-DD date, got {raw!r}") from exc
+        bounds.append(day)
+    start, end = bounds
+    if start > end:
+        raise ValueError(f"{path}: end {end} precedes start {start}")
+    return PlanningPeriod(label.strip(), start, end)
+
+
+def _check_name(name: str) -> None:
+    if (
+        not isinstance(name, str) or not name.strip() or name != name.strip()
+        or name in {".", ".."} or Path(name).name != name or "\\" in name
+    ):
+        raise ValueError(f"expected a single directory or file name, got {name!r}")
+
+
+def schedule_rules_path(period_dir: Path, schedule: str) -> Path:
+    """Locate a named schedule's rules from a directory beneath planner/periods."""
+    directory = Path(period_dir).resolve()
+    if directory.parent.name != "periods":
+        raise ValueError(f"{directory}: expected a planning directory inside periods/")
+    _check_name(schedule)
+    return directory.parent.parent / "schedules" / schedule / "rules.yml"
+
+
+def table_path(directory: Path, stem: str, *, required: bool = True) -> Path | None:
+    """Resolve a table by stem, rejecting ambiguous alternative formats."""
+    directory = Path(directory)
+    _check_name(stem)
+    entries = directory.iterdir() if directory.is_dir() else ()
+    matches = sorted(
+        path for path in entries
+        if path.stem == stem and path.suffix.lower() in {".yml", ".yaml", ".csv"} and path.is_file()
+    )
+    if len(matches) > 1:
+        raise ValueError(f"{directory}: multiple tables for {stem}: {', '.join(path.name for path in matches)}")
+    if required and not matches:
+        raise ValueError(f"{directory}: missing {stem} table (.yml, .yaml or .csv)")
+    return matches[0] if matches else None
+
+
+def compile_period_rules(
+    rows: Iterable[Mapping], year: int, period: PlanningPeriod | None, *, allow_empty: bool = False
+) -> list[Rule]:
+    """Compile rules, defaulting unspecified calendar bounds to the declared period."""
+    if period is None:
+        return compile_rules(rows, year, allow_empty=allow_empty)
+    if year != period.start.year:
+        raise ValueError(f"year {year} differs from planning period start year {period.start.year}")
+
+    # The compiler also checks rows explicitly assigned to other years. Use relative
+    # bounds there so a missing endpoint is evaluated on the same calendar as its peer.
+    def default_bound(bound):
+        offset = bound.year - period.start.year
+        if offset > 99:
+            return bound
+        day = "last" if (bound.month, bound.day) == (2, 29) else f"{bound.day:02d}"
+        return f"{offset}-{bound.month:02d}-{day}"
+
+    def bounded_rows():
+        for row in rows:
+            if not isinstance(row, Mapping):
+                yield row  # The rule compiler reports the offending row number.
+                continue
+            values = dict(row)
+            for key, bound in (("period_start", period.start), ("period_end", period.end)):
+                if values.get(key) in (None, ""):
+                    values[key] = default_bound(bound)
+            yield values
+
+    rules = compile_rules(bounded_rows(), year, allow_empty=allow_empty)
+    for rule in rules:
+        if rule.start < period.start or rule.end > period.end:
+            raise ValueError(
+                f"{rule.variable} rule {rule.start} through {rule.end} outside planning period "
+                f"{period.start} through {period.end}"
+            )
+    return rules
+
+
+def _settings(raw, where):
+    if not isinstance(raw, dict):
+        raise ValueError(f"{where}: expected a mapping")
+    for key, value in raw.items():
+        if not isinstance(key, str) or not key.strip() or key != key.strip():
+            raise ValueError(f"{where}: expected a nonempty field name, got {key!r}")
+        if isinstance(value, (list, dict, set, tuple)) or value is None:
+            raise ValueError(f"{where}.{key}: expected a scalar setting")
+    return raw
+
+
+def _schedule_rows(document, schedule):
+    if document.keys() - {"defaults", "observations"}:
+        raise ValueError("expected defaults and observations at the root of schedule rules")
+    defaults = _settings(document.get("defaults", {}), "defaults")
+    if defaults.keys() - {"frequency", "tolerance_days", "reschedule", "min_spacing_days"}:
+        raise ValueError("defaults may contain frequency, tolerance_days, reschedule and min_spacing_days")
+    observations = document.get("observations")
+    if not isinstance(observations, dict) or not observations:
+        raise ValueError("observations must map at least one variable to its rules")
+    if not isinstance(schedule, str) or not schedule.strip():
+        raise ValueError("structured rules require a schedule name")
+    for variable, observation in observations.items():
+        context = f"observations.{variable}"
+        if not isinstance(observation, dict):
+            raise ValueError(f"{context}: expected a mapping")
+        options = _settings({k: v for k, v in observation.items() if k != "intervals"}, context)
+        intervals = observation.get("intervals", [{}])
+        if not isinstance(intervals, list) or not intervals:
+            raise ValueError(f"{context}.intervals: expected a nonempty sequence of intervals")
+        for index, raw_interval in enumerate(intervals, 1):
+            interval = _settings(raw_interval, f"{context}.intervals[{index}]")
+            rule = {**defaults, **options, **interval}
+            if rule.keys() & {"purpose", "schedule", "variable"}:
+                raise ValueError(f"{context}: purpose, schedule and variable are defined by the schedule layout")
+            yield dict(rule, purpose="assimilation", variable=variable, schedule=schedule)
+
+
+def load_schedule_rules(
+    path: Path, year: int, schedule: str | None, *, period: PlanningPeriod | None = None
+) -> list[Rule]:
+    """Compile a structured schedule or a legacy table of selection rules."""
+    path = Path(path)
+    if path.suffix.lower() in {".yaml", ".yml"}:
+        try:
+            with path.open(encoding="utf-8-sig") as stream:
+                document = YAML(typ="safe").load(stream)
+            if isinstance(document, dict):
+                return compile_period_rules(_schedule_rows(document, schedule), year, period)
+        except (ValueError, YAMLError) as exc:
+            raise ValueError(f"{path}: {exc}") from exc
+    return compile_period_rules(read_rows(path), year, period)
+
+
+def load_evaluation_rules(path: Path, period: PlanningPeriod) -> list[Rule]:
+    """Compile the shared evaluation table for a planning period."""
+    rows = read_rows(path)
+    if not rows:
+        raise ValueError(f"{path}: expected at least one evaluation rule")
+    if any(row.get("purpose") != "evaluation" for row in rows):
+        raise ValueError(f"{path}: shared evaluation rules must all have purpose evaluation")
+    return compile_period_rules(rows, period.start.year, period, allow_empty=True)

@@ -75,6 +75,15 @@ def read_rows(path: Path) -> list[dict[str, str]]:
         raise ValueError(f"{path}: {exc}") from exc
 
 
+def read_schedule(path: Path) -> tuple[str, list[dict[str, str]]]:
+    """Read one schedule and infer its label from its rows or filename."""
+    records = read_rows(path)
+    names = {row["schedule"] for row in records if row.get("schedule")}
+    if len(names) > 1:
+        raise ValueError(f"{path}: expected one schedule per file, found {sorted(names)}")
+    return next(iter(names), path.stem), records
+
+
 def write_rows(
     path: Path,
     rows: Iterable[Mapping],

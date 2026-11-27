@@ -12,6 +12,9 @@ from pathlib import Path
 import pandas as pd
 
 from openamundsen_da.io.paths import find_project_yaml, find_setup_yaml
+from openamundsen_da.planner.layout import (
+    compile_period_rules, load_evaluation_rules, load_schedule_rules, read_period, schedule_rules_path, table_path,
+)
 from openamundsen_da.planner.tables import read_rows
 from openamundsen_da.util.observation_time import match_observation_to_model_time, parse_model_timestep, parse_utc_timestamp
 from openamundsen_da.util.station_da import is_station_variable
@@ -66,13 +69,93 @@ def _reference(project_dir, value):
     return resolved
 
 
+@dataclass
+class _PlannerInputs:
+    schedule: list | Path
+    name: str | None
+    rules: list | Path | None
+    inventory: list | Path | None
+    withheld: list | Path
+    period_dir: Path | None
+    evaluation: Path | None
+
+
+def _schedule_labels(rows):
+    return {
+        row["schedule"] for row in rows
+        if isinstance(row, dict) and isinstance(row.get("schedule"), str) and row["schedule"]
+    }
+
+
+def _inputs(project_dir, da, *, schedule=None, inventory=None, rules=None, withheld=None,
+            schedule_name=None, period=None):
+    settings = da.get("observation_planner", {})
+    allowed = {"inventory", "withheld", "rules", "schedule", "year", "period"}
+    if not isinstance(settings, dict) or settings.keys() - allowed:
+        raise ValueError(f"observation_planner expects a mapping with keys from {sorted(allowed)}")
+
+    def resolve(value):
+        return _reference(project_dir, value) if isinstance(value, str) else value
+
+    source = resolve(da.get("assimilation_events") if schedule is None else schedule)
+    configured = settings if period is None else {}
+    inventory = resolve(configured.get("inventory") if inventory is None else inventory)
+    rules = resolve(configured.get("rules") if rules is None else rules)
+    withheld = resolve(configured.get("withheld") if withheld is None else withheld)
+    period_dir = resolve(settings.get("period")) if period is None else Path(period)
+    name = schedule_name
+    if not name and schedule is None:
+        name = settings.get("schedule")
+    evaluation = None
+    if period_dir is not None:
+        if not isinstance(period_dir, Path):
+            raise ValueError("observation_planner.period must be a planning directory path")
+        period_dir = period_dir.resolve()
+        if not name:
+            labels = _schedule_labels(_read_table(source, project_dir))
+            if len(labels) == 1:
+                name = next(iter(labels))
+            elif isinstance(source, Path):
+                name = source.stem
+        if not name:
+            raise ValueError("specify a schedule name for the planning period")
+        default_rules = schedule_rules_path(period_dir, name)
+        if period is not None and schedule is None:
+            source = table_path(period_dir / "schedules", name)
+        discovered = [period_dir / "period.yml"]
+        if rules is None:
+            rules = default_rules
+            discovered.append(rules)
+        if inventory is None:
+            inventory = table_path(period_dir, "inventory")
+            discovered.append(inventory)
+        evaluation_path = period_dir.parent.parent / "evaluation.yml"
+        if evaluation_path.is_file():
+            evaluation = evaluation_path
+            discovered.append(evaluation)
+        if evaluation is not None or withheld is None:
+            common = table_path(period_dir, "withheld", required=evaluation is not None)
+            if withheld is not None and (not isinstance(withheld, Path) or withheld.resolve() != common.resolve()):
+                raise ValueError(f"shared evaluation rules require the reviewed withheld table {common}")
+            withheld = common
+            if common is not None:
+                discovered.append(common)
+        if period is None:
+            # A project may only reference scientific inputs within its setup.
+            for path in discovered:
+                if not path.resolve().is_relative_to(project_dir.parent.parent.resolve()):
+                    raise ValueError(f"path escapes the setup directory: {path}")
+    return _PlannerInputs(source, name, rules, inventory, withheld if withheld is not None else [], period_dir, evaluation)
+
+
 def planner_input_paths(project_dir, da):
-    """Include all file references in preparation and scientific input identities."""
-    planner = da.get("observation_planner", {})
-    if not isinstance(planner, dict):
-        raise ValueError("observation_planner must be a mapping")
-    values = [da.get("assimilation_events"), *(planner.get(k) for k in ("inventory", "rules", "withheld"))]
-    return tuple(_reference(project_dir, value) for value in values if isinstance(value, str))
+    """Include all explicit and folder-derived files in the preparation input identity."""
+    inputs = _inputs(project_dir, da)
+    paths = [inputs.schedule, inputs.inventory, inputs.rules, inputs.withheld]
+    if inputs.period_dir is not None:
+        paths.append(inputs.period_dir / "period.yml")
+    paths.append(inputs.evaluation)
+    return tuple(path for path in paths if isinstance(path, Path))
 
 
 def reviewed_schedule(da):
@@ -350,10 +433,10 @@ def _suggest_replacement(project_dir, project, shared, rule, target, selected, h
 
 
 def validate_schedule(project_dir, *, schedule=None, inventory=None, rules=None, withheld=None,
-                      schedule_name=None, year=None, project=None):
+                      schedule_name=None, year=None, period=None, project=None):
     """Validate run-independent inputs, collecting row failures without writing files."""
     from openamundsen_da.planner.holdouts import inherited_evaluation_limits
-    from openamundsen_da.planner.selection import compile_rules, matches_holdout, quality_issues, target_dates, validate_inventory
+    from openamundsen_da.planner.selection import matches_holdout, quality_issues, target_dates, validate_inventory
 
     project_dir = Path(project_dir).resolve()
     report = ScheduleReport()
@@ -364,18 +447,31 @@ def validate_schedule(project_dir, *, schedule=None, inventory=None, rules=None,
         da = project.get("data_assimilation", {})
         if not isinstance(da, dict):
             raise ValueError("project.data_assimilation must be a mapping")
-        settings = da.get("observation_planner", {})
-        if not isinstance(settings, dict) or settings.keys() - {"inventory", "withheld", "rules", "schedule", "year"}:
-            raise ValueError("observation_planner expects a mapping with inventory, withheld, rules, schedule or year")
-        rows = _read_table(da.get("assimilation_events") if schedule is None else schedule, project_dir)
-        withheld_input = settings.get("withheld", []) if withheld is None else withheld
-        withheld_rows = _read_table(withheld_input, project_dir)
-        inventory_input = settings.get("inventory") if inventory is None else inventory
-        rule_input = settings.get("rules") if rules is None else rules
+        inputs = _inputs(project_dir, da, schedule=schedule, inventory=inventory, rules=rules, withheld=withheld,
+                         schedule_name=schedule_name, period=period)
+        rows = _read_table(inputs.schedule, project_dir)
+        withheld_rows = _read_table(inputs.withheld, project_dir)
         start = datetime.fromisoformat(str(project["start_date"])).date()
         end = datetime.fromisoformat(str(project["end_date"])).date()
         timestep = parse_model_timestep(setup.get("timestep"))
-        compiled = compile_rules(_read_table(rule_input, project_dir), int(year or settings.get("year", start.year))) if rule_input is not None else []
+        plan = read_period(inputs.period_dir) if inputs.period_dir else None
+        base_year = year
+        if base_year is None and period is None:
+            base_year = da.get("observation_planner", {}).get("year")
+        base_year = int(base_year) if base_year is not None else (plan.start.year if plan else start.year)
+        compiled = []
+        if isinstance(inputs.rules, Path):
+            rule_name = inputs.name
+            if not rule_name:
+                labels = _schedule_labels(rows)
+                rule_name = next(iter(labels)) if len(labels) == 1 else inputs.rules.parent.name
+            compiled = load_schedule_rules(inputs.rules, base_year, rule_name, period=plan)
+        elif inputs.rules is not None:
+            compiled = compile_period_rules(_read_table(inputs.rules, project_dir), base_year, plan)
+        if inputs.evaluation:
+            if any(rule.purpose == "evaluation" for rule in compiled):
+                raise ValueError("define shared evaluation rules only in evaluation.yml")
+            compiled.extend(load_evaluation_rules(inputs.evaluation, plan))
     except (ValueError, OSError, TypeError, KeyError) as exc:
         report.errors.append(str(exc))
         return report
@@ -385,7 +481,7 @@ def validate_schedule(project_dir, *, schedule=None, inventory=None, rules=None,
     selected = [(i, row) for i, row in selected if row is not None]
     reserved = [(i, row) for i, row in reserved if row is not None]
     labels = {row["schedule"] for _, row in selected if row.get("schedule")}
-    chosen = schedule_name or (settings.get("schedule") if schedule is None or not labels else None)
+    chosen = inputs.name or (da.get("observation_planner", {}).get("schedule") if not labels else None)
     if not chosen and len(labels) == 1:
         chosen = next(iter(labels))
     if labels and (len(labels) != 1 or chosen not in labels):
@@ -401,17 +497,17 @@ def validate_schedule(project_dir, *, schedule=None, inventory=None, rules=None,
         report.errors.append(f"schedule: no assimilation rules for {chosen!r}")
     report.checks += ["structure, project period and products, observation identity and quality, same-date conflicts",
                       "target frequency, timing tolerance and spacing" if active else "frequency and timing unassessed (no corresponding rule)"]
-    if withheld_input:
+    if inputs.withheld:
         report.checks.append("withheld observations and assimilation exclusions")
     requested = defaultdict(set)
     for _, row in selected + reserved:
         if row.get("date"):
             requested[row["variable"]].add(_day(row["date"]))
     shared = None
-    if inventory_input is not None:
+    if inputs.inventory is not None:
         shared = defaultdict(list)
         try:
-            inventory_rows = _read_table(inventory_input, project_dir)
+            inventory_rows = _read_table(inputs.inventory, project_dir)
             validate_inventory(inventory_rows)
             for i, item in enumerate(inventory_rows, 1):
                 variable = _value(item, "variable")
@@ -440,6 +536,10 @@ def validate_schedule(project_dir, *, schedule=None, inventory=None, rules=None,
         for i, row in entries:
             variable = row.get("variable", "")
             label = f"{'withheld' if is_withheld else 'schedule'} row {i} ({variable}, {row['date'] or row.get('target_date')})"
+            if plan is not None:
+                for field_name in ("date", "target_date"):
+                    if row.get(field_name) and not plan.start <= _day(row[field_name]) <= plan.end:
+                        report.errors.append(f"{label} {field_name}: outside planning period {plan.start} through {plan.end}")
             rule, target = None, None
             if active and not is_withheld:
                 rule, target = _rule_for(row, active, report, label)
@@ -463,7 +563,7 @@ def validate_schedule(project_dir, *, schedule=None, inventory=None, rules=None,
                 assigned_dates[variable].append((day, i, rule.min_spacing_days if rule else 0))
             else:
                 matching = [r for r in compiled if r.purpose == "evaluation" and r.variable == variable and r.start <= day <= r.end]
-                if compiled and any(r.purpose == "evaluation" and r.variable == variable for r in compiled) and not matching:
+                if (inputs.evaluation or any(r.purpose == "evaluation" and r.variable == variable for r in compiled)) and not matching:
                     report.errors.append(f"{label} date: outside evaluation periods")
                 rule = matching[0] if matching else None
                 if rule:
@@ -486,7 +586,7 @@ def validate_schedule(project_dir, *, schedule=None, inventory=None, rules=None,
                         _match_update(obs, windows[day], timestep, setup.get("timezone"))
                     except ValueError as exc:
                         report.errors.append(f"{label} observation_time: {exc}")
-                limits = inherited_evaluation_limits(compiled, variable, day) if is_withheld else None
+                limits = inherited_evaluation_limits(compiled, variable, day) if is_withheld and plan is None else None
                 for issue in quality_issues(obs, rule, extra_limits=limits):
                     report.errors.append(f"{label} quality: {issue}")
                 if is_withheld:
@@ -550,7 +650,8 @@ def _validate_command(args):
     failed = False
     for path in args.schedule or [None]:
         report = validate_schedule(args.project_dir, schedule=path, rules=args.rules, withheld=args.withheld,
-                                   inventory=args.inventory, schedule_name=args.schedule_name, year=args.year)
+                                   inventory=args.inventory, schedule_name=args.schedule_name, year=args.year,
+                                   period=getattr(args, "period", None))
         print(f"{path or args.project_dir}: {len(report.events)} assigned event(s)")
         for prefix, items in (("CHECK", report.checks), ("WARNING", report.warnings), ("ERROR", report.errors)):
             for item in items:

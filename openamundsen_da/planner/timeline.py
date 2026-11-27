@@ -18,7 +18,7 @@ class TimelinePanel:
 
     name: str
     schedules: dict[str, list[Row]]
-    withheld: list[Row]
+    withheld: list[Row] | None
     bounds: tuple[date, date] | None = None
 
 
@@ -27,7 +27,10 @@ def _panel_data(panel: TimelinePanel):
         raise ValueError("supply at least one schedule to plot")
     groups = defaultdict(list)
     labels = []
-    for i, (name, rows) in enumerate([*panel.schedules.items(), ("Withheld", panel.withheld)]):
+    series = list(panel.schedules.items())
+    if panel.withheld is not None:
+        series.append(("Withheld", panel.withheld))
+    for i, (name, rows) in enumerate(series):
         count = 0
         for number, row in enumerate(rows, 1):
             variable = str(row.get("variable") or "").strip()
@@ -36,7 +39,10 @@ def _panel_data(panel: TimelinePanel):
             if not day or not variable or (i == len(panel.schedules) and not actual):
                 raise ValueError(f"timeline row {number} in {name} requires a date and variable")
             count += bool(actual)
-            groups[(i, variable, bool(actual))].append(date.fromisoformat(str(day)))
+            plotted_day = date.fromisoformat(str(day))
+            if panel.bounds and not panel.bounds[0] <= plotted_day < panel.bounds[1]:
+                raise ValueError(f"timeline row {number} in {name}: {plotted_day} outside {panel.name}")
+            groups[(i, variable, bool(actual))].append(plotted_day)
         labels.append(f"{name} ({count})")
     return groups, labels
 
@@ -53,6 +59,7 @@ def plot_timelines(
 ) -> None:
     """Arrange planning periods in row-major order with a shared variable key and count caption."""
     import matplotlib.pyplot as plt
+    from matplotlib.dates import AutoDateLocator, ConciseDateFormatter
     from matplotlib.lines import Line2D
 
     from openamundsen_da.benchmark.render.common import VARIABLE_STYLES, variable_label
@@ -115,7 +122,13 @@ def plot_timelines(
                     first, last = min(days), max(days)
                     next_month = last.replace(day=calendar.monthrange(last.year, last.month)[1]) + timedelta(days=1)
                     bounds = (first.replace(day=1), next_month)
-                if bounds:
+                if bounds and panel.bounds and (bounds[1] - bounds[0]).days < 28:
+                    locator = AutoDateLocator(minticks=2, maxticks=5)
+                    ax.xaxis.set_major_locator(locator)
+                    ax.xaxis.set_major_formatter(ConciseDateFormatter(locator))
+                    ax.set_xlim(*bounds)
+                    ax.tick_params(axis="x", labelsize=7 if compact else 8.4)
+                elif bounds:
                     apply_month_interval_axis_labels(
                         ax, bounds, include_year_on_first=not combined, labelsize=7 if compact else 8.4
                     )
@@ -127,6 +140,8 @@ def plot_timelines(
                     ax.set_title(f"({letter}) {panel.name}", loc="left", fontsize=9 if compact else 10)
 
             caption = "Parentheses give the number of scheduled updates or withheld observations. Crosses mark missed targets."
+            if all(panel.withheld is None for panel in panels):
+                caption = "Parentheses give the number of scheduled updates. Crosses mark missed targets."
             if not compact:
                 axes[-1, 0].set_xlabel(caption, loc="left", fontsize=7)
             handles = [
