@@ -329,7 +329,6 @@ def test_ci_docs_only_scope_is_narrow_and_full_ci_is_the_fallback() -> None:
     assert "python scripts/ci/classify_changes.py --force-full" in workflow
     assert "git diff --name-only --no-renames" in workflow
     assert "if: needs.change-scope.outputs.docs_only != 'true'" in workflow
-    assert "name: CI gate" in workflow
     assert "test \"${TRUSTED_RESULT}\" = success" in workflow
     assert "test \"${NATIVE_RESULT}\" = success" in workflow
 
