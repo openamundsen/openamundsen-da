@@ -2,37 +2,40 @@
 
 This folder documents the current regression-testing setup for `openamundsen_da`.
 
-## Recommended Workflow (Single Developer, Private Repo)
+## Recommended Workflow
 
-1. Start from `main` and create a feature branch.
-2. Implement changes on the feature branch.
-3. Push branch to GitHub.
-4. Wait for all required `CI` jobs to finish green.
-5. Merge branch into `main` only if green.
-6. After merge, verify the trusted integration and `publish-edge` jobs are green.
-7. Delete merged feature branch.
-
-Important: the repository is public. Keep every CI check green before merging;
-until required-check branch protection is configured, this process is enforced
-by review discipline rather than a hard merge block.
+Start a feature branch from its intended target and open a draft PR for fast
+feedback. Mark it ready when you want the full suite. Merge into `main` or
+`gmd-revision` after the required checks pass on the up-to-date revision. After
+merging into `main`, confirm that the edge image publication passed.
 
 ## What Is Automated
 
 Workflow file: `.github/workflows/ci.yml`
 
 - Triggered on:
-  - Pull requests to `main`
+  - Pull requests to `main` and `gmd-revision`
   - Pushes to `main`
   - Manual dispatch (`workflow_dispatch`)
+  - A weekly cold build on `main`, without edge publication
+- Runtime draft PRs run lint, distribution validation, documentation checks,
+  dependency review and the full unit suite on a GitHub-hosted runner using
+  the PR wheel and cached container dependencies. The result is named
+  `Draft CI gate`. Marking a PR ready starts `CI gate` on the current revision.
+  Documentation-only changes retain the existing short path.
 - GitHub-hosted gates:
   - fatal and stale-code Ruff checks
   - strict wheel and sdist validation with SHA-256 checksums
   - no-dependency installed-wheel smoke tests on Linux, macOS and Windows with Python 3.11 through 3.14
   - curated CLI, navigation/link, frozen tutorial-asset and Jekyll documentation checks
   - pull-request dependency review
-  - `linux/amd64` and `linux/arm64` release-image bootstrap checks and a critical-vulnerability image scan
+  - Native `linux/amd64` and `linux/arm64` release-image bootstrap checks and
+    an AMD64 critical-vulnerability scan. Main exports per-architecture
+    dependency layers after image validation. The weekly cold build refreshes
+    these layers. Draft builds and ready PRs import the layers when they match
+    the build inputs and always install their own validated wheel.
 - Job `Trusted Lenovo P8 integration`:
-  - Runs on self-hosted runner labels: `self-hosted, linux, x64, oa-da`
+  - Runs on self-hosted runner labels: `self-hosted, linux, x64, oa-da, oa-da-trusted`
   - Downloads the wheel that passed the package and portable gates
   - Builds a release-layout image that installs that wheel non-editably
   - Runs unit tests with `pytest` via `scripts/ci/run_unit_tests.sh`
@@ -45,7 +48,7 @@ Workflow file: `.github/workflows/ci.yml`
   - Removes the private checkout before the job ends
   - Uploads only the public Rofental integration artifacts on failure
 - Job `Native pip Rofental integration on Lenovo P8`:
-  - Runs on the same self-hosted runner labels with Python 3.12 outside Docker
+  - Runs on the dedicated `oa-da-native` P8 runner with Python 3.12 outside Docker
   - Creates a fresh virtual environment with a pinned pip resolver and installs the exact tested wheel against `constraints/native-ci-py312.txt`
   - Uses a fully pinned known-good native dependency set, including Matplotlib 3.10.9, and records the actual environment with `pip freeze`
   - Runs `pip check`, the installed-wheel API/CLI smoke test and the full derived Rofental integration through the public Python API (`prepare_project` and `run_project`) from outside the source checkout
@@ -55,8 +58,9 @@ Workflow file: `.github/workflows/ci.yml`
   - Runs only on push to `main`
   - Depends on all trusted tests
   - Uses the scoped repository `GITHUB_TOKEN`
-  - Builds and pushes multi-architecture `sha-<full-commit>` and `edge` tags
-  - Generates BuildKit provenance/SBOM metadata and a GitHub attestation
+  - Stages a multi-architecture image with BuildKit provenance and SBOM, scans
+    its digest and checks startup on both architectures
+  - Attests the staged digest and promotes it to `sha-<full-commit>` and `edge`
   - Never updates `latest`; only a stable release does that
 
 Workflow file `.github/workflows/deploy-docs.yml` validates and builds the
@@ -263,9 +267,11 @@ What it checks:
 Current intended environment:
 - Ubuntu Linux
 - Docker installed and daemon running
-- Runner installed as a systemd service
-- Runner labels include `oa-da` to match CI config
-- Runner user must be able to run Docker commands
+- Two runner services with independent installation and work directories
+- The Docker runner has labels `oa-da` and `oa-da-trusted` and access to Docker
+- The native runner has label `oa-da-native`
+- Keep one trusted Docker runner for CI and release so the two jobs cannot
+  run heavy subdomain tests simultaneously
 
 Required network direction:
 - Outbound HTTPS from test machine to GitHub/GHCR endpoints
@@ -280,14 +286,10 @@ Required:
 - Matching TestPyPI and PyPI Trusted Publisher registrations for
   `.github/workflows/release.yml`
 
-Recommended for this project:
-- Keep `main` as release branch
-- Use PR + green CI discipline before merge
-- Avoid direct pushes to `main` in daily work
-
-Note on private repo + free tier:
-- ruleset enforcement and strict branch protection options may be limited
-- therefore, process discipline is the effective quality gate
+Require `CI gate` and `Dependency review` on `main` and `gmd-revision`, with
+strict up-to-date checks. The required `CI gate` name belongs to merge-ready
+PRs. Runtime fork PRs must first move to a reviewed, trusted branch before
+the private integration jobs can pass.
 
 ## Where Test Setup Is Configured
 
