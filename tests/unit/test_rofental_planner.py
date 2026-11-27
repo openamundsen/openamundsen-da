@@ -19,17 +19,17 @@ PLANNER = Path(__file__).resolve().parents[2] / "examples" / "rofental" / "plann
 ])
 def test_reviewed_winter_is_reproducible(tmp_path, year, reserved, expected):
     winter = PLANNER / f"{year}_{year + 1}"
-    inventory = read_rows(winter / "inventory.csv")
-    rules = compile_rules(read_rows(PLANNER / "rules.csv"), year)
+    inventory = read_rows(winter / "inventory.yml")
+    rules = compile_rules(read_rows(PLANNER / "rules.yml"), year)
     held = generate_holdouts(inventory, rules)
     assert len(held) == reserved
-    path = tmp_path / "held.csv"
+    path = tmp_path / "held.yml"
     write_rows(path, held)
-    assert read_rows(path) == read_rows(winter / "withheld.csv")
+    assert read_rows(path) == read_rows(winter / "withheld.yml")
 
     for cadence, count in zip(("monthly", "14-day", "7-day"), expected, strict=True):
         rows = generate_schedule(inventory, rules, cadence, held)
-        path = tmp_path / f"{cadence}.csv"
+        path = tmp_path / f"{cadence}.yml"
         write_rows(path, rows)
         assert read_rows(path) == read_rows(winter / path.name)
         updates = [row for row in rows if row["date"]]

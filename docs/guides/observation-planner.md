@@ -21,11 +21,11 @@ observation classes and land-cover settings as the planned runs.
 
 ```bash
 project=examples/rofental/projects/project_2022_2023
-rules=examples/rofental/planner/rules.csv
+rules=examples/rofental/planner/rules.yml
 
 openamundsen-da planner inventory "$project" \
   --start 2022-10-01 --end 2023-06-30 --variables station_hs scf wet_snow_line \
-  --output inventory.csv
+  --output inventory.yml
 ```
 
 For stations, the inventory records which stations have a usable value at the
@@ -56,14 +56,14 @@ update may use another eligible observation. A replacement still has to meet
 the original tolerance, period and spacing.
 
 ```bash
-openamundsen-da planner holdouts --inventory inventory.csv --rules "$rules" \
-  --year 2022 --output evaluation.csv
+openamundsen-da planner holdouts --inventory inventory.yml --rules "$rules" \
+  --year 2022 --output evaluation.yml
 for cadence in monthly 14-day 7-day; do
-  openamundsen-da planner generate --inventory inventory.csv --rules "$rules" \
-    --holdouts evaluation.csv --year 2022 --schedule "$cadence" --output "$cadence.csv"
+  openamundsen-da planner generate --inventory inventory.yml --rules "$rules" \
+    --holdouts evaluation.yml --year 2022 --schedule "$cadence" --output "$cadence.yml"
 done
-openamundsen-da planner plot --schedule monthly.csv --schedule 14-day.csv \
-  --schedule 7-day.csv --holdouts evaluation.csv --output timeline.png
+openamundsen-da planner plot --schedule monthly.yml --schedule 14-day.yml \
+  --schedule 7-day.yml --holdouts evaluation.yml --output timeline.png
 ```
 
 For evaluation rules, use `best` for a requested count of high-quality
@@ -81,9 +81,9 @@ existing schedule until you explicitly request replacement with `--overwrite`.
 ## Validate and use a reviewed schedule
 
 ```bash
-openamundsen-da planner validate --project-dir "$project" --inventory inventory.csv \
-  --rules "$rules" --withheld evaluation.csv --schedule monthly.csv \
-  --schedule 14-day.csv --schedule 7-day.csv
+openamundsen-da planner validate --project-dir "$project" --inventory inventory.yml \
+  --rules "$rules" --withheld evaluation.yml --schedule monthly.yml \
+  --schedule 14-day.yml --schedule 7-day.yml
 ```
 
 The check is read-only. It reports missing prescribed targets as warnings and
@@ -97,11 +97,12 @@ A handwritten schedule can contain just the required `variable` and `date`
 fields when these uniquely identify usable project observations. Use a
 timezone-aware ISO timestamp for `observation_time`, the inventory's source
 identifier for `source_id`, and station identifiers separated by a vertical bar
-for `station_ids`. For example, this CSV selects an observed station update:
+for `station_ids`. For example, this YAML selects an observed station update.
 
-```csv
-variable,date,station_ids
-station_hs,2022-11-03,latschbloder|proviantdepot
+```yaml
+- variable: station_hs
+  date: '2022-11-03'
+  station_ids: latschbloder|proviantdepot
 ```
 
 Running the validator without rules checks the applicable project requirements and reports
@@ -113,11 +114,11 @@ next to the project YAML, the reference takes this form.
 
 ```yaml
 data_assimilation:
-  assimilation_events: monthly.csv
+  assimilation_events: monthly.yml
   observation_planner:
-    inventory: inventory.csv
-    rules: rules.csv
-    withheld: evaluation.csv
+    inventory: inventory.yml
+    rules: rules.yml
+    withheld: evaluation.yml
     schedule: monthly
     year: 2022
 ```

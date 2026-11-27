@@ -1,6 +1,6 @@
 # Rofental observation schedules
 
-Four winters share one set of selection rules. Each winter directory contains its observation inventory, one list of observations withheld from all three schedules, and the monthly, 14-day and 7-day schedules. Each schedule has one row per target, including the reason when a target was missed. The summary tables report requested and achieved counts and spacing. The exclusion tables identify individual acquisitions or station dates that failed a rule. [Selection rules](rules.csv) · [Counts by winter, schedule and variable](schedule_counts.csv)
+The four winters share one YAML rules file. Start with the [2022/23 monthly schedule](2022_2023/monthly.yml) and its [withheld observations](2022_2023/withheld.yml). Each winter directory contains its observation inventory, one list of observations withheld from all three schedules, and the monthly, 14-day and 7-day schedules. Each schedule has one row per target, including the reason when a target was missed. The summary tables report requested and achieved counts and spacing. The exclusion tables identify individual acquisitions or station dates that failed a rule. [Selection rules](rules.yml) · [Counts by winter, schedule and variable](schedule_counts.yml)
 
 | Winter and timeline | Monthly updates | 14-day updates | 7-day updates | Withheld optical / radar |
 | --- | ---: | ---: | ---: | ---: |
@@ -23,7 +23,7 @@ For the 2022/23 monthly project, preparation from a referenced CSV, a referenced
 
 ## Reproduce the schedules
 
-From this directory, run the following commands in the framework environment. The supplied winter inventories are sufficient to reproduce the selections and figures. The example writes to a fresh directory and compares every regenerated schedule and withheld list with the reviewed CSVs.
+From this directory, run the following commands in the framework environment. The supplied winter inventories are sufficient to reproduce the selections and figures. The example writes to a fresh directory and compares every regenerated schedule and withheld list with the reviewed YAML files.
 
 ```bash
 out=$(mktemp -d)
@@ -31,18 +31,18 @@ for year in 2019 2020 2021 2022; do
   next=$((year + 1))
   winter=${year}_${next}
   dest="$out/$winter"
-  openamundsen-da planner holdouts --rules rules.csv --year "$year" \
-    --inventory "$winter/inventory.csv" --output "$dest/withheld.csv"
-  cmp "$winter/withheld.csv" "$dest/withheld.csv"
+  openamundsen-da planner holdouts --rules rules.yml --year "$year" \
+    --inventory "$winter/inventory.yml" --output "$dest/withheld.yml"
+  cmp "$winter/withheld.yml" "$dest/withheld.yml"
   for cadence in monthly 14-day 7-day; do
-    openamundsen-da planner generate --rules rules.csv --year "$year" \
-      --inventory "$winter/inventory.csv" --withheld "$dest/withheld.csv" \
-      --schedule "$cadence" --output "$dest/$cadence.csv"
-    cmp "$winter/$cadence.csv" "$dest/$cadence.csv"
+    openamundsen-da planner generate --rules rules.yml --year "$year" \
+      --inventory "$winter/inventory.yml" --withheld "$dest/withheld.yml" \
+      --schedule "$cadence" --output "$dest/$cadence.yml"
+    cmp "$winter/$cadence.yml" "$dest/$cadence.yml"
   done
-  openamundsen-da planner plot --schedule "$dest/monthly.csv" \
-    --schedule "$dest/14-day.csv" --schedule "$dest/7-day.csv" \
-    --withheld "$dest/withheld.csv" --title "Rofental $year/${next:2}" \
+  openamundsen-da planner plot --schedule "$dest/monthly.yml" \
+    --schedule "$dest/14-day.yml" --schedule "$dest/7-day.yml" \
+    --withheld "$dest/withheld.yml" --title "Rofental $year/${next:2}" \
     --output "$dest/timeline.png"
 done
 ```
@@ -51,20 +51,20 @@ The shipped Rofental setup includes the source files for 2022/23. Run its read-o
 
 ```bash
 openamundsen-da planner validate --project-dir ../projects/project_2022_2023 \
-  --rules rules.csv --inventory 2022_2023/inventory.csv --withheld 2022_2023/withheld.csv \
-  --schedule 2022_2023/monthly.csv --schedule 2022_2023/14-day.csv --schedule 2022_2023/7-day.csv
+  --rules rules.yml --inventory 2022_2023/inventory.yml --withheld 2022_2023/withheld.yml \
+  --schedule 2022_2023/monthly.yml --schedule 2022_2023/14-day.yml --schedule 2022_2023/7-day.yml
 ```
 
 To prepare the monthly pilot, use these entries in the existing `data_assimilation` section of a copy of the 2022/23 project YAML. The paths resolve from the project directory under `projects/`.
 
 ```yaml
-assimilation_events: ../../planner/2022_2023/monthly.csv
+assimilation_events: ../../planner/2022_2023/monthly.yml
 observation_planner:
   year: 2022
   schedule: monthly
-  rules: ../../planner/rules.csv
-  inventory: ../../planner/2022_2023/inventory.csv
-  withheld: ../../planner/2022_2023/withheld.csv
+  rules: ../../planner/rules.yml
+  inventory: ../../planner/2022_2023/inventory.yml
+  withheld: ../../planner/2022_2023/withheld.yml
 ```
 
 ## Source observations
@@ -80,7 +80,7 @@ To rebuild the inventories from the source files, place the rasters and their co
 ```bash
 openamundsen-da planner inventory ../projects/project_2022_2023 \
   --start 2022-10-01 --end 2023-06-30 --variables station_hs scf wet_snow_line \
-  --output "$out/inventory-2022.csv"
+  --output "$out/inventory-2022.yml"
 ```
 
 The first inventory starts October 1, 2019, to preserve the common optical target dates. The prepared forcing for that winter begins October 4, before the first selected update. The other projects start October 1. The four full winter validation periods end June 30 at 21:00 local time.

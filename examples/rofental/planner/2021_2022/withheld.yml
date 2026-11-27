@@ -1,0 +1,41 @@
+- variable: scf
+  date: '2021-11-17'
+  observation_time: '2021-11-17T10:22:19.024000Z'
+  source_id: s2_fsc_snowflake_rofental_2021_11_17.tif
+  station_ids: ''
+  quality_for_ranking: '4521'
+  effective_limits: '{"min_support_coverage_ratio": 0.1}'
+  strategy: best
+- variable: scf
+  date: '2022-04-03'
+  observation_time: '2022-04-03T10:05:49.024000Z'
+  source_id: s2_fsc_snowflake_rofental_2022_04_03.tif
+  station_ids: ''
+  quality_for_ranking: '5298'
+  effective_limits: '{"min_support_coverage_ratio": 0.1}'
+  strategy: best_per_month
+- variable: wet_snow_line
+  date: '2022-04-26'
+  observation_time: '2022-04-26T05:26:24Z'
+  source_id: WSM_S1A_SAR_track168_2022_04_26_05_27_33.tif
+  station_ids: ''
+  quality_for_ranking: '6297'
+  effective_limits: '{"min_n_wet": 50.0, "min_support_coverage_ratio": 0.1, "min_wet_bands":
+    1.0}'
+  strategy: spread
+- variable: scf
+  date: '2022-05-11'
+  observation_time: '2022-05-11T10:16:01.024000Z'
+  source_id: s2_fsc_snowflake_rofental_2022_05_11.tif
+  station_ids: ''
+  quality_for_ranking: '3003'
+  effective_limits: '{"min_support_coverage_ratio": 0.1}'
+  strategy: best_per_month
+- variable: scf
+  date: '2022-06-27'
+  observation_time: '2022-06-27T10:06:11.024000Z'
+  source_id: s2_fsc_snowflake_rofental_2022_06_27.tif
+  station_ids: ''
+  quality_for_ranking: '4373'
+  effective_limits: '{"min_support_coverage_ratio": 0.1}'
+  strategy: best_per_month

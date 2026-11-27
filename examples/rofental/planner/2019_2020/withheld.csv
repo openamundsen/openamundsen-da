@@ -1,7 +1,0 @@
-variable,date,observation_time,source_id,station_ids,quality_for_ranking,effective_limits,strategy
-scf,2019-12-08,2019-12-08T10:23:19.024000Z,s2_fsc_snowflake_rofental_2019_12_08.tif,,4308,"{""min_support_coverage_ratio"": 0.1}",best
-scf,2020-04-01,2020-04-01T10:20:21.024000Z,s2_fsc_snowflake_rofental_2020_04_01.tif,,4640,"{""min_support_coverage_ratio"": 0.1}",best_per_month
-wet_snow_line,2020-04-08,2020-04-08T17:07:12Z,WSM_S1A_SAR_track117_2020_04_08_17_07_07.tif,,6237,"{""min_n_wet"": 50.0, ""min_support_coverage_ratio"": 0.1, ""min_wet_bands"": 1.0}",spread
-wet_snow_line,2020-04-24,2020-04-24T05:26:24Z,WSM_S1A_SAR_track168_2020_04_24_05_27_21.tif,,6297,"{""min_n_wet"": 50.0, ""min_support_coverage_ratio"": 0.1, ""min_wet_bands"": 1.0}",spread
-scf,2020-05-06,2020-05-06T10:15:59.024000Z,s2_fsc_snowflake_rofental_2020_05_06.tif,,4374,"{""min_support_coverage_ratio"": 0.1}",best_per_month
-scf,2020-06-12,2020-06-12T10:05:59.025000Z,s2_fsc_snowflake_rofental_2020_06_12.tif,,3879,"{""min_support_coverage_ratio"": 0.1}",best_per_month

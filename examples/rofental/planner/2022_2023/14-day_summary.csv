@@ -1,4 +1,0 @@
-purpose,variable,period_start,period_end,requested,selected,min_spacing_days,achieved_min_spacing_days,reason
-assimilation,wet_snow_line,2023-02-15,2023-06-30,10,2,1,32,no observation passed quality screening | no observations within timing tolerance and active period
-assimilation,scf,2022-10-01,2023-06-30,20,15,1,10,no observations within timing tolerance and active period
-assimilation,station_hs,2022-11-01,2023-02-28,9,9,1,12,
