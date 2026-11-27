@@ -78,6 +78,18 @@ def test_period_rule_bounds_and_ambiguous_files_fail_before_selection(tmp_path):
         schedule_rules_path(directory, "../escape")
 
 
+def test_schedule_rules_support_the_previous_folder_layout(tmp_path):
+    period = tmp_path / "periods" / "winter"
+    flat = tmp_path / "schedules" / "weekly.yml"
+    nested = flat.parent / "weekly" / "rules.yml"
+    assert schedule_rules_path(period, "weekly") == flat
+    _write(nested, _document())
+    assert schedule_rules_path(period, "weekly") == nested
+    _write(flat, _document())
+    with pytest.raises(ValueError, match="Multiple rule files"):
+        schedule_rules_path(period, "weekly")
+
+
 def test_folder_project_validates_reviewed_inputs_and_tracks_every_source(tmp_path):
     source = Path(__file__).resolve().parents[2] / "examples" / "rofental"
     setup = tmp_path / "rofental"
@@ -92,7 +104,7 @@ def test_folder_project_validates_reviewed_inputs_and_tracks_every_source(tmp_pa
     _write(config_path, config)
     prepared = load_project_configuration(project)
     assert set(prepared.planner_inputs) == {
-        schedule, period / "inventory.yml", period / "period.yml", period / "withheld.yml",
+        schedule, period / "inventory.csv", period / "period.yml", period / "withheld.yml",
         setup / "planner" / "evaluation.yml", schedule_rules_path(period, "monthly"),
     }
     report = validate_schedule(project, period=period, schedule_name="monthly")

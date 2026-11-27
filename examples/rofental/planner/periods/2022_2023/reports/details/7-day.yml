@@ -1,0 +1,872 @@
+schedule: 7-day
+observations:
+  wet_snow_line:
+    settings:
+      reschedule: true
+      tolerance_days: 2
+      min_spacing_days: 1
+      effective_limits:
+        min_n_wet: 50.0
+        min_support_coverage_ratio: 0.1
+        min_wet_bands: 1.0
+    exclusion_settings:
+      period_start: '2023-02-15'
+      period_end: '2023-06-30'
+      effective_limits:
+        min_n_wet: 50.0
+        min_support_coverage_ratio: 0.1
+        min_wet_bands: 1.0
+    summary:
+    - purpose: assimilation
+      period_start: '2023-02-15'
+      period_end: '2023-06-30'
+      requested: 20
+      selected: 3
+      min_spacing_days: 1
+      achieved_min_spacing_days: 4
+      reason: all eligible observations withheld | no observation passed quality screening
+        | no observations within timing tolerance and active period
+    targets:
+    - target_date: '2023-02-15'
+      status: missed
+      reason: no observations within timing tolerance and active period
+      available: 0
+      eligible: 0
+      withheld: 0
+    - target_date: '2023-02-22'
+      status: missed
+      reason: no observations within timing tolerance and active period
+      available: 0
+      eligible: 0
+      withheld: 0
+    - target_date: '2023-03-01'
+      status: missed
+      reason: no observations within timing tolerance and active period
+      available: 0
+      eligible: 0
+      withheld: 0
+    - target_date: '2023-03-08'
+      status: missed
+      reason: no observations within timing tolerance and active period
+      available: 0
+      eligible: 0
+      withheld: 0
+    - target_date: '2023-03-15'
+      status: missed
+      reason: no observation passed quality screening
+      available: 1
+      eligible: 0
+      withheld: 0
+    - date: '2023-03-24'
+      observation_time: '2023-03-24T17:07:12Z'
+      source_id: WSM_S1A_SAR_track117_2023_03_24_17_07_24.tif
+      target_date: '2023-03-22'
+      status: selected
+      preferred_date: '2023-03-24'
+      offset_days: 2
+      quality_for_ranking: '6237'
+      available: 1
+      eligible: 1
+      withheld: 0
+    - date: '2023-03-28'
+      observation_time: '2023-03-28T05:26:24Z'
+      source_id: WSM_S1A_SAR_track168_2023_03_28_05_27_38.tif
+      target_date: '2023-03-29'
+      status: selected
+      preferred_date: '2023-03-28'
+      offset_days: -1
+      quality_for_ranking: '6297'
+      available: 1
+      eligible: 1
+      withheld: 0
+    - target_date: '2023-04-05'
+      status: missed
+      reason: no observation passed quality screening
+      available: 1
+      eligible: 0
+      withheld: 0
+    - target_date: '2023-04-12'
+      status: missed
+      reason: no observations within timing tolerance and active period
+      available: 0
+      eligible: 0
+      withheld: 0
+    - target_date: '2023-04-19'
+      status: missed
+      reason: all eligible observations withheld
+      available: 2
+      eligible: 1
+      withheld: 1
+    - target_date: '2023-04-26'
+      status: missed
+      reason: no observations within timing tolerance and active period
+      available: 0
+      eligible: 0
+      withheld: 0
+    - target_date: '2023-05-03'
+      status: missed
+      reason: all eligible observations withheld
+      available: 1
+      eligible: 1
+      withheld: 1
+    - target_date: '2023-05-10'
+      status: missed
+      reason: no observation passed quality screening
+      available: 1
+      eligible: 0
+      withheld: 0
+    - date: '2023-05-15'
+      observation_time: '2023-05-15T05:26:24Z'
+      source_id: WSM_S1A_SAR_track168_2023_05_15_05_27_40.tif
+      target_date: '2023-05-17'
+      status: selected
+      preferred_date: '2023-05-15'
+      offset_days: -2
+      quality_for_ranking: '6297'
+      available: 1
+      eligible: 1
+      withheld: 0
+    - target_date: '2023-05-24'
+      status: missed
+      reason: no observation passed quality screening
+      available: 1
+      eligible: 0
+      withheld: 0
+    - target_date: '2023-05-31'
+      status: missed
+      reason: no observations within timing tolerance and active period
+      available: 0
+      eligible: 0
+      withheld: 0
+    - target_date: '2023-06-07'
+      status: missed
+      reason: no observation passed quality screening
+      available: 1
+      eligible: 0
+      withheld: 0
+    - target_date: '2023-06-14'
+      status: missed
+      reason: no observation passed quality screening
+      available: 1
+      eligible: 0
+      withheld: 0
+    - target_date: '2023-06-21'
+      status: missed
+      reason: no observation passed quality screening
+      available: 1
+      eligible: 0
+      withheld: 0
+    - target_date: '2023-06-28'
+      status: missed
+      reason: no observation passed quality screening
+      available: 1
+      eligible: 0
+      withheld: 0
+    exclusions:
+    - date: '2023-03-12'
+      observation_time: '2023-03-12T17:07:12Z'
+      source_id: WSM_S1A_SAR_track117_2023_03_12_17_07_24.tif
+      reason: wet_snow_line unavailable or out of range; no_crossing_fraction
+    - date: '2023-03-16'
+      observation_time: '2023-03-16T05:26:24Z'
+      source_id: WSM_S1A_SAR_track168_2023_03_16_05_27_37.tif
+      reason: wet_snow_line unavailable or out of range; no_crossing_fraction
+    - date: '2023-04-05'
+      observation_time: '2023-04-05T17:07:12Z'
+      source_id: WSM_S1A_SAR_track117_2023_04_05_17_07_24.tif
+      reason: wet_snow_line unavailable or out of range; no_crossing_fraction
+    - date: '2023-04-09'
+      observation_time: '2023-04-09T05:26:24Z'
+      source_id: WSM_S1A_SAR_track168_2023_04_09_05_27_38.tif
+      reason: wet_snow_line unavailable or out of range; no_crossing_fraction
+    - date: '2023-04-17'
+      observation_time: '2023-04-17T17:07:12Z'
+      source_id: WSM_S1A_SAR_track117_2023_04_17_17_07_25.tif
+      reason: withheld
+    - date: '2023-04-21'
+      observation_time: '2023-04-21T05:26:24Z'
+      source_id: WSM_S1A_SAR_track168_2023_04_21_05_27_38.tif
+      reason: wet_snow_line unavailable or out of range; no_crossing_fraction
+    - date: '2023-05-03'
+      observation_time: '2023-05-03T05:26:24Z'
+      source_id: WSM_S1A_SAR_track168_2023_05_03_05_27_39.tif
+      reason: withheld
+    - date: '2023-05-11'
+      observation_time: '2023-05-11T17:07:12Z'
+      source_id: WSM_S1A_SAR_track117_2023_05_11_17_07_26.tif
+      reason: wet_snow_line unavailable or out of range; no_crossing_fraction
+    - date: '2023-05-23'
+      observation_time: '2023-05-23T17:07:12Z'
+      source_id: WSM_S1A_SAR_track117_2023_05_23_17_07_26.tif
+      reason: wet_snow_line unavailable or out of range; no_crossing_fraction
+    - date: '2023-05-27'
+      observation_time: '2023-05-27T05:26:24Z'
+      source_id: WSM_S1A_SAR_track168_2023_05_27_05_27_40.tif
+      reason: wet_snow_line unavailable or out of range; no_crossing_fraction
+    - date: '2023-06-04'
+      observation_time: '2023-06-04T17:07:12Z'
+      source_id: WSM_S1A_SAR_track117_2023_06_04_17_07_27.tif
+      reason: wet_snow_line unavailable or out of range; no_crossing_fraction
+    - date: '2023-06-08'
+      observation_time: '2023-06-08T05:26:24Z'
+      source_id: WSM_S1A_SAR_track168_2023_06_08_05_27_40.tif
+      reason: wet_snow_line unavailable or out of range; no_crossing_fraction
+    - date: '2023-06-16'
+      observation_time: '2023-06-16T17:07:12Z'
+      source_id: WSM_S1A_SAR_track117_2023_06_16_17_07_28.tif
+      reason: wet_snow_line unavailable or out of range; no_crossing_fraction
+    - date: '2023-06-20'
+      observation_time: '2023-06-20T05:26:24Z'
+      source_id: WSM_S1A_SAR_track168_2023_06_20_05_27_41.tif
+      reason: wet_snow_line unavailable or out of range; no_crossing_fraction
+    - date: '2023-06-28'
+      observation_time: '2023-06-28T17:07:12Z'
+      source_id: WSM_S1A_SAR_track117_2023_06_28_17_07_28.tif
+      reason: wet_snow_line unavailable or out of range; no_crossing_fraction
+  scf:
+    settings:
+      reschedule: true
+      tolerance_days: 2
+      min_spacing_days: 1
+      effective_limits:
+        min_support_coverage_ratio: 0.1
+    exclusion_settings:
+      period_start: '2022-10-01'
+      period_end: '2023-06-30'
+      effective_limits:
+        min_support_coverage_ratio: 0.1
+    summary:
+    - purpose: assimilation
+      period_start: '2022-10-01'
+      period_end: '2023-06-30'
+      requested: 39
+      selected: 21
+      min_spacing_days: 1
+      achieved_min_spacing_days: 3
+      reason: all eligible observations withheld | no observation passed quality screening
+        | no observations within timing tolerance and active period
+    targets:
+    - date: '2022-10-03'
+      observation_time: '2022-10-03T10:17:49.024000Z'
+      source_id: s2_fsc_rofental_2022_10_03.tif
+      target_date: '2022-10-01'
+      status: selected
+      preferred_date: '2022-10-03'
+      offset_days: 2
+      quality_for_ranking: '3533'
+      available: 1
+      eligible: 1
+      withheld: 0
+    - date: '2022-10-08'
+      observation_time: '2022-10-08T10:19:31.024000Z'
+      source_id: s2_fsc_rofental_2022_10_08.tif
+      target_date: '2022-10-08'
+      status: selected
+      preferred_date: '2022-10-08'
+      offset_days: 0
+      quality_for_ranking: '1391'
+      available: 1
+      eligible: 1
+      withheld: 0
+    - target_date: '2022-10-15'
+      status: missed
+      reason: no observation passed quality screening
+      available: 1
+      eligible: 0
+      withheld: 0
+    - target_date: '2022-10-22'
+      status: missed
+      reason: no observations within timing tolerance and active period
+      available: 0
+      eligible: 0
+      withheld: 0
+    - date: '2022-10-30'
+      observation_time: '2022-10-30T10:10:39.024000Z'
+      source_id: s2_fsc_rofental_2022_10_30.tif
+      target_date: '2022-10-29'
+      status: selected
+      preferred_date: '2022-10-30'
+      offset_days: 1
+      quality_for_ranking: '3159'
+      available: 2
+      eligible: 2
+      withheld: 1
+    - target_date: '2022-11-05'
+      status: missed
+      reason: no observations within timing tolerance and active period
+      available: 0
+      eligible: 0
+      withheld: 0
+    - target_date: '2022-11-12'
+      status: missed
+      reason: no observations within timing tolerance and active period
+      available: 0
+      eligible: 0
+      withheld: 0
+    - date: '2022-11-19'
+      observation_time: '2022-11-19T10:12:29.024000Z'
+      source_id: s2_fsc_rofental_2022_11_19.tif
+      target_date: '2022-11-19'
+      status: selected
+      preferred_date: '2022-11-19'
+      offset_days: 0
+      quality_for_ranking: '3505'
+      available: 2
+      eligible: 1
+      withheld: 0
+    - date: '2022-11-27'
+      observation_time: '2022-11-27T10:23:51.024000Z'
+      source_id: s2_fsc_rofental_2022_11_27.tif
+      target_date: '2022-11-26'
+      status: selected
+      preferred_date: '2022-11-27'
+      offset_days: 1
+      quality_for_ranking: '2554'
+      available: 2
+      eligible: 2
+      withheld: 0
+    - target_date: '2022-12-03'
+      status: missed
+      reason: no observations within timing tolerance and active period
+      available: 0
+      eligible: 0
+      withheld: 0
+    - target_date: '2022-12-10'
+      status: missed
+      reason: no observations within timing tolerance and active period
+      available: 0
+      eligible: 0
+      withheld: 0
+    - target_date: '2022-12-17'
+      status: missed
+      reason: no observations within timing tolerance and active period
+      available: 0
+      eligible: 0
+      withheld: 0
+    - target_date: '2022-12-24'
+      status: missed
+      reason: no observations within timing tolerance and active period
+      available: 0
+      eligible: 0
+      withheld: 0
+    - date: '2023-01-01'
+      observation_time: '2023-01-01T10:23:39.024000Z'
+      source_id: s2_fsc_rofental_2023_01_01.tif
+      target_date: '2022-12-31'
+      status: selected
+      preferred_date: '2023-01-01'
+      offset_days: 1
+      quality_for_ranking: '4237'
+      available: 1
+      eligible: 1
+      withheld: 0
+    - target_date: '2023-01-07'
+      status: missed
+      reason: no observations within timing tolerance and active period
+      available: 0
+      eligible: 0
+      withheld: 0
+    - target_date: '2023-01-14'
+      status: missed
+      reason: no observations within timing tolerance and active period
+      available: 0
+      eligible: 0
+      withheld: 0
+    - date: '2023-01-21'
+      observation_time: '2023-01-21T10:22:39.024000Z'
+      source_id: s2_fsc_rofental_2023_01_21.tif
+      target_date: '2023-01-21'
+      status: selected
+      preferred_date: '2023-01-21'
+      offset_days: 0
+      quality_for_ranking: '742'
+      available: 1
+      eligible: 1
+      withheld: 0
+    - date: '2023-01-28'
+      observation_time: '2023-01-28T10:11:59.024000Z'
+      source_id: s2_fsc_rofental_2023_01_28.tif
+      target_date: '2023-01-28'
+      status: selected
+      preferred_date: '2023-01-28'
+      offset_days: 0
+      quality_for_ranking: '3902'
+      available: 2
+      eligible: 2
+      withheld: 0
+    - date: '2023-02-05'
+      observation_time: '2023-02-05T10:22:21.024000Z'
+      source_id: s2_fsc_rofental_2023_02_05.tif
+      target_date: '2023-02-04'
+      status: selected
+      preferred_date: '2023-02-05'
+      offset_days: 1
+      quality_for_ranking: '5034'
+      available: 1
+      eligible: 1
+      withheld: 0
+    - date: '2023-02-10'
+      observation_time: '2023-02-10T10:20:49.024000Z'
+      source_id: s2_fsc_rofental_2023_02_10.tif
+      target_date: '2023-02-11'
+      status: selected
+      preferred_date: '2023-02-10'
+      offset_days: -1
+      quality_for_ranking: '3618'
+      available: 2
+      eligible: 2
+      withheld: 0
+    - date: '2023-02-20'
+      observation_time: '2023-02-20T10:19:49.024000Z'
+      source_id: s2_fsc_rofental_2023_02_20.tif
+      target_date: '2023-02-18'
+      status: selected
+      preferred_date: '2023-02-20'
+      offset_days: 2
+      quality_for_ranking: '4795'
+      available: 1
+      eligible: 1
+      withheld: 0
+    - date: '2023-02-25'
+      observation_time: '2023-02-25T10:20:21.024000Z'
+      source_id: s2_fsc_rofental_2023_02_25.tif
+      target_date: '2023-02-25'
+      status: selected
+      preferred_date: '2023-02-25'
+      offset_days: 0
+      quality_for_ranking: '2883'
+      available: 1
+      eligible: 1
+      withheld: 0
+    - target_date: '2023-03-04'
+      status: missed
+      reason: no observations within timing tolerance and active period
+      available: 0
+      eligible: 0
+      withheld: 0
+    - target_date: '2023-03-11'
+      status: missed
+      reason: no observation passed quality screening
+      available: 1
+      eligible: 0
+      withheld: 0
+    - date: '2023-03-17'
+      observation_time: '2023-03-17T10:17:41.024000Z'
+      source_id: s2_fsc_rofental_2023_03_17.tif
+      target_date: '2023-03-18'
+      status: selected
+      preferred_date: '2023-03-17'
+      offset_days: -1
+      quality_for_ranking: '4963'
+      available: 2
+      eligible: 2
+      withheld: 0
+    - target_date: '2023-03-25'
+      status: missed
+      reason: no observation passed quality screening
+      available: 1
+      eligible: 0
+      withheld: 0
+    - date: '2023-04-03'
+      observation_time: '2023-04-03T10:05:51.024000Z'
+      source_id: s2_fsc_rofental_2023_04_03.tif
+      target_date: '2023-04-01'
+      status: selected
+      preferred_date: '2023-04-03'
+      offset_days: 2
+      quality_for_ranking: '2665'
+      available: 2
+      eligible: 2
+      withheld: 0
+    - date: '2023-04-06'
+      observation_time: '2023-04-06T10:20:21.025000Z'
+      source_id: s2_fsc_rofental_2023_04_06.tif
+      target_date: '2023-04-08'
+      status: selected
+      preferred_date: '2023-04-06'
+      offset_days: -2
+      quality_for_ranking: '2475'
+      available: 1
+      eligible: 1
+      withheld: 0
+    - date: '2023-04-16'
+      observation_time: '2023-04-16T10:16:01.024000Z'
+      source_id: s2_fsc_rofental_2023_04_16.tif
+      target_date: '2023-04-15'
+      status: selected
+      preferred_date: '2023-04-16'
+      offset_days: 1
+      quality_for_ranking: '691'
+      available: 1
+      eligible: 1
+      withheld: 0
+    - target_date: '2023-04-22'
+      status: missed
+      reason: no observations within timing tolerance and active period
+      available: 0
+      eligible: 0
+      withheld: 0
+    - target_date: '2023-04-29'
+      status: missed
+      reason: no observations within timing tolerance and active period
+      available: 0
+      eligible: 0
+      withheld: 0
+    - target_date: '2023-05-06'
+      status: missed
+      reason: no observations within timing tolerance and active period
+      available: 0
+      eligible: 0
+      withheld: 0
+    - target_date: '2023-05-13'
+      status: missed
+      reason: no observations within timing tolerance and active period
+      available: 0
+      eligible: 0
+      withheld: 0
+    - date: '2023-05-18'
+      observation_time: '2023-05-18T10:05:59.024000Z'
+      source_id: s2_fsc_rofental_2023_05_18.tif
+      target_date: '2023-05-20'
+      status: selected
+      preferred_date: '2023-05-18'
+      offset_days: -2
+      quality_for_ranking: '993'
+      available: 1
+      eligible: 1
+      withheld: 0
+    - date: '2023-05-26'
+      observation_time: '2023-05-26T10:16:01.024000Z'
+      source_id: s2_fsc_rofental_2023_05_26.tif
+      target_date: '2023-05-27'
+      status: selected
+      preferred_date: '2023-05-26'
+      offset_days: -1
+      quality_for_ranking: '3484'
+      available: 1
+      eligible: 1
+      withheld: 0
+    - target_date: '2023-06-03'
+      status: missed
+      reason: all eligible observations withheld
+      available: 1
+      eligible: 1
+      withheld: 1
+    - date: '2023-06-12'
+      observation_time: '2023-06-12T10:06:01.024000Z'
+      source_id: s2_fsc_rofental_2023_06_12.tif
+      target_date: '2023-06-10'
+      status: selected
+      preferred_date: '2023-06-12'
+      offset_days: 2
+      quality_for_ranking: '4116'
+      available: 1
+      eligible: 1
+      withheld: 0
+    - date: '2023-06-17'
+      observation_time: '2023-06-17T10:05:59.024000Z'
+      source_id: s2_fsc_rofental_2023_06_17.tif
+      target_date: '2023-06-17'
+      status: selected
+      preferred_date: '2023-06-17'
+      offset_days: 0
+      quality_for_ranking: '2333'
+      available: 2
+      eligible: 2
+      withheld: 0
+    - date: '2023-06-25'
+      observation_time: '2023-06-25T10:16:01.025000Z'
+      source_id: s2_fsc_rofental_2023_06_25.tif
+      target_date: '2023-06-24'
+      status: selected
+      preferred_date: '2023-06-25'
+      offset_days: 1
+      quality_for_ranking: '3532'
+      available: 1
+      eligible: 1
+      withheld: 0
+    exclusions:
+    - date: '2022-10-13'
+      observation_time: '2022-10-13T10:18:59.024000Z'
+      source_id: s2_fsc_rofental_2022_10_13.tif
+      reason: support_coverage_ratio=0.0808658 fails min_support_coverage_ratio=0.1
+    - date: '2022-10-28'
+      observation_time: '2022-10-28T10:21:31.024000Z'
+      source_id: s2_fsc_rofental_2022_10_28.tif
+      reason: withheld
+    - date: '2022-11-17'
+      observation_time: '2022-11-17T10:23:11.024000Z'
+      source_id: s2_fsc_rofental_2022_11_17.tif
+      reason: support_coverage_ratio=0.0494514 fails min_support_coverage_ratio=0.1
+    - date: '2023-03-09'
+      observation_time: '2023-03-09T10:07:49.025000Z'
+      source_id: s2_fsc_rofental_2023_03_09.tif
+      reason: support_coverage_ratio=0.0365249 fails min_support_coverage_ratio=0.1
+    - date: '2023-03-27'
+      observation_time: '2023-03-27T10:16:31.024000Z'
+      source_id: s2_fsc_rofental_2023_03_27.tif
+      reason: support_coverage_ratio=0.0154817 fails min_support_coverage_ratio=0.1
+    - date: '2023-04-18'
+      observation_time: '2023-04-18T10:05:59.024000Z'
+      source_id: s2_fsc_rofental_2023_04_18.tif
+      reason: withheld
+    - date: '2023-05-03'
+      observation_time: '2023-05-03T10:10:21.024000Z'
+      source_id: s2_fsc_rofental_2023_05_03.tif
+      reason: withheld
+    - date: '2023-06-02'
+      observation_time: '2023-06-02T10:06:01.024000Z'
+      source_id: s2_fsc_rofental_2023_06_02.tif
+      reason: withheld
+    - date: '2023-06-20'
+      observation_time: '2023-06-20T10:15:59.024000Z'
+      source_id: s2_fsc_rofental_2023_06_20.tif
+      reason: support_coverage_ratio=0.0610251 fails min_support_coverage_ratio=0.1
+  station_hs:
+    settings:
+      reschedule: true
+      tolerance_days: 2
+      min_spacing_days: 1
+      effective_limits:
+        min_station_count: 2.0
+    exclusion_settings:
+      period_start: '2022-11-01'
+      period_end: '2023-02-28'
+      effective_limits:
+        min_station_count: 2.0
+    summary:
+    - purpose: assimilation
+      period_start: '2022-11-01'
+      period_end: '2023-02-28'
+      requested: 18
+      selected: 18
+      min_spacing_days: 1
+      achieved_min_spacing_days: 5
+    targets:
+    - date: '2022-11-03'
+      observation_time: '2022-11-02T23:00:00+00:00'
+      station_ids: latschbloder|proviantdepot
+      target_date: '2022-11-01'
+      status: selected
+      preferred_date: '2022-11-03'
+      offset_days: 2
+      quality_for_ranking: '2'
+      available: 3
+      eligible: 1
+      withheld: 0
+    - date: '2022-11-08'
+      observation_time: '2022-11-07T23:00:00+00:00'
+      station_ids: latschbloder|proviantdepot
+      target_date: '2022-11-08'
+      status: selected
+      preferred_date: '2022-11-08'
+      offset_days: 0
+      quality_for_ranking: '2'
+      available: 5
+      eligible: 5
+      withheld: 0
+    - date: '2022-11-15'
+      observation_time: '2022-11-14T23:00:00+00:00'
+      station_ids: latschbloder|proviantdepot
+      target_date: '2022-11-15'
+      status: selected
+      preferred_date: '2022-11-15'
+      offset_days: 0
+      quality_for_ranking: '2'
+      available: 5
+      eligible: 5
+      withheld: 0
+    - date: '2022-11-22'
+      observation_time: '2022-11-21T23:00:00+00:00'
+      station_ids: latschbloder|proviantdepot
+      target_date: '2022-11-22'
+      status: selected
+      preferred_date: '2022-11-22'
+      offset_days: 0
+      quality_for_ranking: '2'
+      available: 5
+      eligible: 5
+      withheld: 0
+    - date: '2022-11-29'
+      observation_time: '2022-11-28T23:00:00+00:00'
+      station_ids: latschbloder|proviantdepot
+      target_date: '2022-11-29'
+      status: selected
+      preferred_date: '2022-11-29'
+      offset_days: 0
+      quality_for_ranking: '2'
+      available: 5
+      eligible: 5
+      withheld: 0
+    - date: '2022-12-06'
+      observation_time: '2022-12-05T23:00:00+00:00'
+      station_ids: latschbloder|proviantdepot
+      target_date: '2022-12-06'
+      status: selected
+      preferred_date: '2022-12-06'
+      offset_days: 0
+      quality_for_ranking: '2'
+      available: 5
+      eligible: 5
+      withheld: 0
+    - date: '2022-12-13'
+      observation_time: '2022-12-12T23:00:00+00:00'
+      station_ids: latschbloder|proviantdepot
+      target_date: '2022-12-13'
+      status: selected
+      preferred_date: '2022-12-13'
+      offset_days: 0
+      quality_for_ranking: '2'
+      available: 5
+      eligible: 5
+      withheld: 0
+    - date: '2022-12-20'
+      observation_time: '2022-12-19T23:00:00+00:00'
+      station_ids: latschbloder|proviantdepot
+      target_date: '2022-12-20'
+      status: selected
+      preferred_date: '2022-12-20'
+      offset_days: 0
+      quality_for_ranking: '2'
+      available: 5
+      eligible: 5
+      withheld: 0
+    - date: '2022-12-27'
+      observation_time: '2022-12-26T23:00:00+00:00'
+      station_ids: latschbloder|proviantdepot
+      target_date: '2022-12-27'
+      status: selected
+      preferred_date: '2022-12-27'
+      offset_days: 0
+      quality_for_ranking: '2'
+      available: 5
+      eligible: 5
+      withheld: 0
+    - date: '2023-01-03'
+      observation_time: '2023-01-02T23:00:00+00:00'
+      station_ids: latschbloder|proviantdepot
+      target_date: '2023-01-03'
+      status: selected
+      preferred_date: '2023-01-03'
+      offset_days: 0
+      quality_for_ranking: '2'
+      available: 5
+      eligible: 5
+      withheld: 0
+    - date: '2023-01-10'
+      observation_time: '2023-01-09T23:00:00+00:00'
+      station_ids: latschbloder|proviantdepot
+      target_date: '2023-01-10'
+      status: selected
+      preferred_date: '2023-01-10'
+      offset_days: 0
+      quality_for_ranking: '2'
+      available: 5
+      eligible: 5
+      withheld: 0
+    - date: '2023-01-17'
+      observation_time: '2023-01-16T23:00:00+00:00'
+      station_ids: latschbloder|proviantdepot
+      target_date: '2023-01-17'
+      status: selected
+      preferred_date: '2023-01-17'
+      offset_days: 0
+      quality_for_ranking: '2'
+      available: 5
+      eligible: 5
+      withheld: 0
+    - date: '2023-01-24'
+      observation_time: '2023-01-23T23:00:00+00:00'
+      station_ids: latschbloder|proviantdepot
+      target_date: '2023-01-24'
+      status: selected
+      preferred_date: '2023-01-24'
+      offset_days: 0
+      quality_for_ranking: '2'
+      available: 5
+      eligible: 5
+      withheld: 0
+    - date: '2023-01-31'
+      observation_time: '2023-01-30T23:00:00+00:00'
+      station_ids: latschbloder|proviantdepot
+      target_date: '2023-01-31'
+      status: selected
+      preferred_date: '2023-01-31'
+      offset_days: 0
+      quality_for_ranking: '2'
+      available: 5
+      eligible: 5
+      withheld: 0
+    - date: '2023-02-07'
+      observation_time: '2023-02-06T23:00:00+00:00'
+      station_ids: latschbloder|proviantdepot
+      target_date: '2023-02-07'
+      status: selected
+      preferred_date: '2023-02-07'
+      offset_days: 0
+      quality_for_ranking: '2'
+      available: 5
+      eligible: 5
+      withheld: 0
+    - date: '2023-02-14'
+      observation_time: '2023-02-13T23:00:00+00:00'
+      station_ids: latschbloder|proviantdepot
+      target_date: '2023-02-14'
+      status: selected
+      preferred_date: '2023-02-14'
+      offset_days: 0
+      quality_for_ranking: '2'
+      available: 5
+      eligible: 5
+      withheld: 0
+    - date: '2023-02-21'
+      observation_time: '2023-02-20T23:00:00+00:00'
+      station_ids: latschbloder|proviantdepot
+      target_date: '2023-02-21'
+      status: selected
+      preferred_date: '2023-02-21'
+      offset_days: 0
+      quality_for_ranking: '2'
+      available: 5
+      eligible: 2
+      withheld: 0
+    - date: '2023-02-28'
+      observation_time: '2023-02-27T23:00:00+00:00'
+      station_ids: latschbloder|proviantdepot
+      target_date: '2023-02-28'
+      status: selected
+      preferred_date: '2023-02-28'
+      offset_days: 0
+      quality_for_ranking: '2'
+      available: 3
+      eligible: 3
+      withheld: 0
+    exclusions:
+    - date: '2022-11-01'
+      observation_time: '2022-10-31T23:00:00+00:00'
+      station_ids: latschbloder
+      reason: station_count=1 fails min_station_count=2
+    - date: '2022-11-02'
+      observation_time: '2022-11-01T23:00:00+00:00'
+      station_ids: latschbloder
+      reason: station_count=1 fails min_station_count=2
+    - date: '2022-11-04'
+      observation_time: '2022-11-03T23:00:00+00:00'
+      station_ids: latschbloder
+      reason: station_count=1 fails min_station_count=2
+    - date: '2023-02-20'
+      observation_time: '2023-02-19T23:00:00+00:00'
+      station_ids: proviantdepot
+      reason: station_count=1 fails min_station_count=2
+    - date: '2023-02-22'
+      observation_time: '2023-02-21T23:00:00+00:00'
+      station_ids: proviantdepot
+      reason: station_count=1 fails min_station_count=2
+    - date: '2023-02-23'
+      observation_time: '2023-02-22T23:00:00+00:00'
+      station_ids: proviantdepot
+      reason: station_count=1 fails min_station_count=2
+    - date: '2023-02-24'
+      observation_time: '2023-02-23T23:00:00+00:00'
+      station_ids: proviantdepot
+      reason: station_count=1 fails min_station_count=2

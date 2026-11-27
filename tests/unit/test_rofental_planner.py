@@ -7,6 +7,7 @@ from shutil import copyfile, copytree
 import pytest
 
 from openamundsen_da.cli import main
+from openamundsen_da.planner.reporting import read_report_targets
 from openamundsen_da.planner.selection import matches_holdout
 from openamundsen_da.planner.tables import read_rows
 
@@ -29,7 +30,7 @@ def test_reviewed_winter_is_reproducible(tmp_path, monkeypatch, year, reserved, 
     copytree(PLANNER / "schedules", "schedules")
     copyfile(PLANNER / "evaluation.yml", "evaluation.yml")
     period.mkdir(parents=True)
-    for filename in ("period.yml", "inventory.yml"):
+    for filename in ("period.yml", "inventory.csv"):
         copyfile(reviewed / filename, period / filename)
 
     assert main(["planner", "holdouts", "--period", str(period)]) == 0
@@ -44,23 +45,23 @@ def test_reviewed_winter_is_reproducible(tmp_path, monkeypatch, year, reserved, 
         assert len(updates) == count
         assert all(row["date"] and row["variable"] for row in updates)
         assert all(set(row) <= {"date", "variable", "observation_time", "source_id", "station_ids"} for row in updates)
-        targets = read_rows(period / "reports" / f"{cadence}_targets.yml")
-        selected = [row for row in targets if row["date"]]
+        details = period / "reports" / "details" / f"{cadence}.yml"
+        targets = read_report_targets(details)
+        selected = [row for row in targets if row.get("date")]
         assert [(row["date"], row["variable"]) for row in updates] == sorted(
             (row["date"], row["variable"]) for row in selected
         )
         assert not any(matches_holdout(row, excluded) for row in selected for excluded in held)
 
-    reports = {
-        f"{name}_{kind}.yml"
-        for name in ("withheld", *CADENCES)
-        for kind in ("summary", "exclusions")
-    }
-    reports.update(f"{name}_targets.yml" for name in CADENCES)
-    assert {p.name for p in (period / "reports").iterdir()} == reports
-    for filename in reports:
-        report = Path("reports") / filename
-        assert (period / report).read_bytes() == (reviewed / report).read_bytes()
+    reports = period / "reports"
+    assert {p.name for p in reports.iterdir()} == {"details", *(f"{cadence}.pdf" for cadence in CADENCES)}
+    for cadence in CADENCES:
+        assert (reports / f"{cadence}.pdf").read_bytes().startswith(b"%PDF-")
+        assert (reviewed / "reports" / f"{cadence}.pdf").read_bytes().startswith(b"%PDF-")
+    details = reports / "details"
+    assert {p.stem for p in details.iterdir()} == {"withheld", *CADENCES}
+    for path in details.iterdir():
+        assert path.read_bytes() == (reviewed / path.relative_to(period)).read_bytes()
 
 
 def test_four_panel_timeline_matches_reviewed_winter_plots(monkeypatch):
@@ -98,8 +99,8 @@ def test_four_panel_timeline_matches_reviewed_winter_plots(monkeypatch):
                 date(year, 10, 1), date(year + 1, 7, 1)
             ]
             targets = [
-                row for cadence in CADENCES for row in read_rows(
-                    PLANNER / "periods" / f"{year}_{year + 1}" / "reports" / f"{cadence}_targets.yml"
+                row for cadence in CADENCES for row in read_report_targets(
+                    PLANNER / "periods" / f"{year}_{year + 1}" / "reports" / "details" / f"{cadence}.yml"
                 )
             ]
             assert sum(len(group.get_offsets()) for group in axis.collections) == len(targets) + withheld

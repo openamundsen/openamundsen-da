@@ -75,6 +75,6 @@ def test_explicit_year_and_inventory_can_use_the_grouped_rofental_evaluation(tmp
     output = tmp_path / "withheld.yml"
     assert main([
         "planner", "holdouts", "--rules", str(planner / "evaluation.yml"), "--year", "2021",
-        "--inventory", str(inputs / "inventory.yml"), "--output", str(output),
+        "--inventory", str(inputs / "inventory.csv"), "--output", str(output),
     ]) == 0
     assert output.read_bytes() == (inputs / "withheld.yml").read_bytes()

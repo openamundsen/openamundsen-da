@@ -64,7 +64,14 @@ def schedule_rules_path(period_dir: Path, schedule: str) -> Path:
     if directory.parent.name != "periods":
         raise ValueError(f"{directory}: expected a planning directory inside periods/")
     _check_name(schedule)
-    return directory.parent.parent / "schedules" / schedule / "rules.yml"
+    schedules = directory.parent.parent / "schedules"
+    flat = schedules / f"{schedule}.yml"
+    nested = schedules / schedule / "rules.yml"
+    if nested.is_file():
+        if flat.is_file():
+            raise ValueError(f"Multiple rule files for {schedule}: {flat} and {nested}")
+        return nested
+    return flat
 
 
 def table_path(directory: Path, stem: str, *, required: bool = True) -> Path | None:
@@ -256,3 +263,57 @@ def load_evaluation_rules(
     if any(row.get("purpose") != "evaluation" for row in rows):
         raise ValueError(f"{path}: shared evaluation rules must all have purpose evaluation")
     return compile_period_rules(rows, year, period, allow_empty=True)
+
+
+def _configured_schedules(period: Path) -> set[str]:
+    folder = period.parent.parent / "schedules"
+    if not folder.is_dir():
+        return set()
+    return {
+        path.name if path.is_dir() else path.stem for path in folder.iterdir()
+        if (path.is_dir() and (path / "rules.yml").is_file())
+        or (path.is_file() and path.suffix.lower() in {".yaml", ".yml", ".csv"})
+    }
+
+
+def schedule_table_path(period: Path, name: str, *, creating: bool = False) -> Path:
+    """Keep a single schedule beside period.yml; preserve existing schedule locations."""
+    _check_name(name)
+    flat = table_path(period, name + ".schedule", required=False)
+    grouped = table_path(period / "schedules", name, required=False)
+    if flat and grouped:
+        raise ValueError(f"{period}: duplicate schedule files for {name}")
+    if flat or grouped:
+        return flat or grouped
+    if not creating:
+        raise ValueError(f"{period}: missing schedule {name}")
+    if not (period / "schedules").is_dir() and (
+        len(_configured_schedules(period)) == 1 or any(period.glob("*.schedule.*"))
+    ):
+        return period / f"{name}.schedule.yml"
+    return period / "schedules" / f"{name}.yml"
+
+
+def report_paths(period: Path | None, output: Path) -> tuple[Path, Path]:
+    """Use one reports directory; group details when multiple schedules share a period."""
+    output = Path(output)
+    if period is not None:
+        period = Path(period)
+        in_period = output.parent.resolve() == period.resolve()
+        flat_schedule = in_period and output.stem.endswith(".schedule")
+        evaluation = in_period and output.stem == "withheld"
+        if evaluation or flat_schedule or output.parent.resolve() == (period / "schedules").resolve():
+            name = output.stem.removesuffix(".schedule") if flat_schedule else output.stem
+            reports = period / "reports"
+            pdf = reports / f"{name}.pdf"
+            configured = _configured_schedules(period)
+            if evaluation and "withheld" in configured:
+                return pdf, period / "withheld_details.yml"
+            grouped = reports / "details" / f"{name}.yml"
+            flat = reports / f"{name}_details.yml"
+            if grouped.is_file() and flat.is_file():
+                raise ValueError(f"{output}: multiple structured reports found")
+            if grouped.is_file() or (not flat.is_file() and len(configured) > 1 and not flat_schedule):
+                return pdf, grouped
+            return pdf, flat
+    return output.with_name(output.name + ".pdf"), output.with_name(output.name + ".details.yml")

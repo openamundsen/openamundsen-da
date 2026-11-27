@@ -7,7 +7,8 @@ from datetime import date, timedelta
 from pathlib import Path
 from statistics import mean
 
-from .layout import read_period, table_path
+from .layout import read_period, report_paths, table_path
+from .reporting import read_report_targets
 from .tables import read_rows, read_schedule
 from .timeline import TimelinePanel, plot_timelines
 
@@ -15,25 +16,24 @@ from .timeline import TimelinePanel, plot_timelines
 def read_plot_schedule(path: Path):
     """Combine current assignments with the target grid recorded during generation."""
     label, rows = read_schedule(path)
-    stem = f"{path.stem}_targets"
-    directories = [path.parent]
-    if path.parent.name == "schedules":
-        directories.append(path.parent.parent / "reports")
-    reports = []
-    for directory in directories:
-        matching = directory / f"{stem}{path.suffix}"
-        candidate = matching if matching.is_file() else table_path(directory, stem, required=False)
-        if candidate:
-            reports.append(candidate)
-    if len(reports) > 1:
-        raise ValueError(f"{path}: found two target reports: {reports[0]} and {reports[1]}")
-    report = reports[0] if reports else None
-    if report is None or any(not row.get("date") and row.get("target_date") for row in rows):
-        return label, rows
+    period = path.parent.parent if path.parent.name == "schedules" else None
+    if path.stem.endswith(".schedule") and (path.parent / "period.yml").is_file():
+        period = path.parent
+        label = path.stem.removesuffix(".schedule")
+    _, report = report_paths(period, path)
+    if not report.is_file() and period:
+        _, report = report_paths(None, path)
+    if report.is_file():
+        entries = read_report_targets(report)
+    else:
+        report = _legacy_report(path)
+        if report is None or any(not r.get("date") and r.get("target_date") for r in rows):
+            return label, rows
+        entries = read_rows(report)
 
     targets = {}
     original = {}
-    for entry in read_rows(report):
+    for entry in entries:
         variable = entry.get("variable")
         target = entry.get("target_date")
         if not variable or not target or (variable, target) in targets:
@@ -86,13 +86,30 @@ def read_plot_schedule(path: Path):
     return label, plotted + extra
 
 
+def _legacy_report(path: Path):
+    stem = f"{path.stem}_targets"
+    directories = [path.parent]
+    if path.parent.name == "schedules":
+        directories.append(path.parent.parent / "reports")
+    reports = []
+    for directory in directories:
+        matching = directory / f"{stem}{path.suffix}"
+        candidate = matching if matching.is_file() else table_path(directory, stem, required=False)
+        if candidate:
+            reports.append(candidate)
+    if len(reports) > 1:
+        raise ValueError(f"{path}: found two target reports: {reports[0]} and {reports[1]}")
+    return reports[0] if reports else None
+
+
 def _read_panel(directory: Path) -> TimelinePanel | None:
     period = read_period(directory)
     schedules = {}
-    for path in sorted((directory / "schedules").glob("*")):
+    for path in sorted([*(directory / "schedules").glob("*"), *directory.glob("*.schedule.*")]):
         if not path.is_file() or path.suffix.lower() not in {".yml", ".yaml", ".csv"}:
             continue
-        label = path.stem[:1].upper() + path.stem[1:]
+        name = path.stem.removesuffix(".schedule") if path.parent == directory else path.stem
+        label = name[:1].upper() + name[1:]
         if label in schedules:
             raise ValueError(f"{directory}: duplicate schedule files for {label!r}")
         _, schedules[label] = read_plot_schedule(path)

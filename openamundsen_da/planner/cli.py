@@ -7,7 +7,7 @@ from pathlib import Path
 
 
 def _period_selection(args):
-    from .layout import load_evaluation_rules, load_schedule_rules, read_period, schedule_rules_path, table_path
+    from .layout import load_evaluation_rules, load_schedule_rules, read_period, schedule_rules_path, schedule_table_path, table_path
 
     directory = args.period.resolve()
     period = read_period(directory)
@@ -22,7 +22,8 @@ def _period_selection(args):
             raise ValueError(f"{evaluation}: configure evaluation rules before generating withheld observations")
         args.rules = evaluation
         rules = load_evaluation_rules(evaluation, period)
-        destination, stem = directory, "withheld"
+        if args.output is None:
+            args.output = table_path(directory, "withheld", required=False) or directory / "withheld.yml"
     else:
         args.rules = schedule_rules_path(directory, args.schedule)
         rules = load_schedule_rules(args.rules, period.start.year, args.schedule, period=period)
@@ -32,24 +33,23 @@ def _period_selection(args):
         args.holdouts = shared
         if evaluation.exists() and shared is None:
             raise ValueError(f"generate the shared withheld list with planner holdouts --period {directory} first")
-        destination, stem = directory / "schedules", args.schedule
-    if args.output is None:
-        args.output = table_path(destination, stem, required=False) or destination / f"{stem}.yml"
-    reports = directory / "reports" if args.output.resolve().parent == destination.resolve() else args.output.parent
-    return rules, reports
+        if args.output is None:
+            args.output = schedule_table_path(directory, args.schedule, creating=True)
+    return rules, period.name
 
 
 def _select(args: argparse.Namespace) -> int:
     from .holdouts import HOLDOUT_FIELDS, SUMMARY_FIELDS, generate_holdouts, schedule_summary
-    from .layout import load_evaluation_rules, load_schedule_rules
+    from .layout import load_evaluation_rules, load_schedule_rules, report_paths
+    from .reporting import render_reports, staged_outputs, write_details
     from .schedule_output import UPDATE_FIELDS, assigned_updates
-    from .selection import IDENTITY, SCHEDULE_FIELDS, generate_schedule
+    from .selection import IDENTITY, generate_schedule
     from .tables import read_rows, write_rows
 
     exclusion_fields = (*IDENTITY, "schedule", "period_start", "period_end", "reason", "effective_limits")
 
     if args.period is not None:
-        rules, reports = _period_selection(args)
+        rules, label = _period_selection(args)
     else:
         if args.rules is None or args.year is None or args.inventory is None or args.output is None:
             raise ValueError("supply --period or all of --rules, --year, --inventory and --output")
@@ -57,11 +57,11 @@ def _select(args: argparse.Namespace) -> int:
             rules = load_evaluation_rules(args.rules, year=args.year)
         else:
             rules = load_schedule_rules(args.rules, args.year, args.schedule)
-        reports = args.output.parent
+        label = str(args.year)
     inventory = read_rows(args.inventory)
     exclusions = []
     summary = []
-    tables = []
+    targets = []
     output = args.output
     if args.planner_action == "holdouts":
         rows = generate_holdouts(inventory, rules, summary=summary, exclusions=exclusions)
@@ -72,36 +72,33 @@ def _select(args: argparse.Namespace) -> int:
         )
         targets = generate_schedule(inventory, rules, args.schedule, holdouts, exclusions=exclusions)
         summary = schedule_summary(targets, rules, args.schedule)
-        tables.append((reports / f"{output.stem}_targets{output.suffix}", targets, SCHEDULE_FIELDS))
         rows = assigned_updates(targets, inventory)
         fields = [key for key in UPDATE_FIELDS if key in {"date", "variable"} or any(key in row for row in rows)]
-    exclusions_path = args.exclusions or reports / f"{output.stem}_exclusions{output.suffix}"
-    summary_path = args.summary or reports / f"{output.stem}_summary{output.suffix}"
-    tables.extend(
-        [
-            (exclusions_path, exclusions, exclusion_fields),
-            (summary_path, summary, SUMMARY_FIELDS),
-            (output, rows, fields),
-        ]
-    )
+    generate = args.planner_action == "generate"
+    tables = [(output, rows, fields)]
+    if args.summary:
+        tables.append((args.summary, summary, SUMMARY_FIELDS))
+    if args.exclusions:
+        tables.append((args.exclusions, exclusions, exclusion_fields))
+    pdf, detail = report_paths(args.period, output)
+    paths = [detail, *([pdf] if generate else []), *(path for path, _, _ in tables)]
     sources = [args.rules, args.inventory, getattr(args, "holdouts", None)]
     if args.period:
         sources.extend([args.period / "period.yml", args.period.resolve().parent.parent / "evaluation.yml"])
-    destinations = {path.resolve() for path, _, _ in tables}
-    if len(destinations) != len(tables) or any(path and path.resolve() in destinations for path in sources):
-        raise ValueError("supply distinct paths for each input and output table")
-    for path, _, _ in tables:
-        if path.suffix.lower() not in {".csv", ".yaml", ".yml"}:
-            raise ValueError(f"{path}: expected a CSV or YAML table")
-        if path.is_dir():
-            raise ValueError(f"{path}: output must be a file")
-        if path.exists() and not args.overwrite:
-            raise FileExistsError(f"{path} exists; choose a new filename or pass --overwrite")
-    for path, records, headers in tables:
-        write_rows(
-            path, records, fields=headers, overwrite=args.overwrite,
-            sparse=args.planner_action == "generate" and path == output,
-        )
+    if {path.resolve() for path in paths} & {path.resolve() for path in sources if path}:
+        raise ValueError("supply distinct paths for each input and output")
+    with staged_outputs(paths, overwrite=args.overwrite) as staged:
+        for path, records, headers in tables:
+            write_rows(staged[path], records, fields=headers, sparse=generate and path == output)
+        if generate:
+            evaluation = args.holdouts is not None or any(rule.purpose == "evaluation" for rule in rules)
+            render_reports(staged[pdf], staged[detail], label=label, schedule=args.schedule,
+                           targets=targets, summary=summary, exclusions=exclusions,
+                           withheld=holdouts if evaluation else None, rules=rules)
+        else:
+            write_details(staged[detail], "withheld", summary=summary, targets=[], exclusions=exclusions)
+    if generate:
+        print(pdf)
     for row in summary:
         print(
             f"{row['variable']} ({row['period_start']} to {row['period_end']}): "
@@ -185,6 +182,11 @@ def _plot(args: argparse.Namespace) -> int:
 
 def add_commands(subparsers) -> None:
     """Register the planner's selection and timeline operations on the public CLI."""
+    parser = subparsers.add_parser("report", help="Validate an edited schedule and refresh its reports")
+    parser.add_argument("--project-dir", required=True, type=Path, help="Directory containing the project YAML")
+    parser.add_argument("--period", required=True, type=Path, help="Planning period directory")
+    parser.add_argument("--schedule", required=True, metavar="NAME", help="Name of the reviewed schedule")
+    parser.set_defaults(planner_handler=_report)
     for action, description in (
         ("generate", "Generate an editable assimilation schedule"),
         ("holdouts", "Reserve shared observations for evaluation"),
@@ -202,9 +204,9 @@ def add_commands(subparsers) -> None:
         parser.add_argument(
             "--output", type=Path, help="Editable CSV or YAML selection to write"
         )
-        parser.add_argument("--summary", type=Path, help="Counts and spacing table (period mode: reports/)")
+        parser.add_argument("--summary", type=Path, help="Optional flat counts and spacing export")
         parser.add_argument(
-            "--exclusions", type=Path, help="Quality and holdout exclusions table (period mode: reports/)"
+            "--exclusions", type=Path, help="Optional flat quality and holdout exclusions export"
         )
         parser.add_argument(
             "--overwrite", action="store_true", help="Explicitly replace existing output tables"
@@ -234,6 +236,12 @@ def add_commands(subparsers) -> None:
     )
     plot.add_argument("--title", help="Optional figure title, for example the winter")
     plot.add_argument("--output", type=Path, help="PNG output (default for discovery: timeline.png in the input directory)")
+
+
+def _report(args: argparse.Namespace) -> int:
+    from .report_refresh import refresh_report
+
+    return refresh_report(args)
 
 
 def _validate(args: argparse.Namespace) -> int:

@@ -23,19 +23,27 @@ inputs and generated selections for a specific date range.
 planner/
 ├── evaluation.yml
 ├── schedules/
-│   ├── monthly/rules.yml
-│   ├── 14-day/rules.yml
-│   └── 7-day/rules.yml
+│   ├── monthly.yml
+│   ├── 14-day.yml
+│   └── 7-day.yml
 └── periods/
     └── 2022_2023/
         ├── period.yml
-        ├── inventory.yml
+        ├── inventory.csv
         ├── withheld.yml
         ├── schedules/
         │   ├── monthly.yml
         │   ├── 14-day.yml
         │   └── 7-day.yml
         └── reports/
+            ├── monthly.pdf
+            ├── 14-day.pdf
+            ├── 7-day.pdf
+            └── details/
+                ├── monthly.yml
+                ├── 14-day.yml
+                ├── 7-day.yml
+                └── withheld.yml
 ```
 
 Set inclusive dates and an optional display label in `period.yml`.
@@ -51,10 +59,16 @@ rules. For example, `0-10-01` means October 1 of that year and `1-02-last`
 means the last day of the following February, including leap years. ISO dates
 set absolute bounds.
 
+For a new period with one configured schedule, generation writes
+`<name>.schedule.yml` beside `period.yml`. Its PDF and `<name>_details.yml`
+share `reports/`. Additional schedules can use the same flat layout. The planner
+also recognizes existing schedules under `schedules/`.
+
 ## Define a schedule
 
-Each schedule directory has a `rules.yml` with defaults and observation-specific
-settings. Use `monthly` for calendar months or a positive integer for a fixed
+Each `schedules/<name>.yml` file contains defaults and observation-specific
+settings. The planner also reads the older `schedules/<name>/rules.yml` layout.
+Use `monthly` for calendar months or a positive integer for a fixed
 interval in days. Give each observation a priority. It is active throughout
 the period unless you set `period_start` and `period_end` to narrow its date
 range. Use `intervals` for several date ranges or to change the cadence within
@@ -113,8 +127,9 @@ planner=examples/rofental/planner
 period="$planner/periods/2022_2023"
 ```
 
-Build a new `inventory.yml` using the dates in `period.yml` or start with the
-shipped inventory when reproducing the Rofental selections.
+Build a new `inventory.csv` using the dates in `period.yml` or start with the
+shipped inventory when reproducing the Rofental selections. A period can also
+use a YAML inventory. Use `--output` to choose its filename and format.
 
 ```bash
 openamundsen-da planner inventory "$project" --period "$period" \
@@ -194,14 +209,21 @@ identify otherwise ambiguous acquisitions, and station IDs specify a selected su
   variable: station_hs
 ```
 
-The companion `reports/<name>_targets.yml` records the generation result for
-every requested target, including its selected date or reason for a miss,
-candidate counts and quality diagnostics. The report preserves the original
-generation result after a manual edit. The summary and exclusions tables give
-counts, spacing and excluded observations. Withheld observations have their
-own summary and exclusions tables.
-Generation protects existing tables until you explicitly request replacement
-with `--overwrite`.
+Generating a schedule writes a compact `reports/<name>.pdf` for review.
+`reports/details/<name>.yml` groups the summary, target outcomes and exclusions
+by observation type. Each target records its requested date (`target_date`)
+and the assigned observation date or reason for a miss. The details also
+include candidate counts and quality diagnostics. The shared evaluation
+selection has its own details in `reports/details/withheld.yml`. A planner with
+a single schedule keeps `<name>_details.yml` next to its PDF.
+Use `--overwrite` to replace an existing selection and its reports.
+
+After editing a period schedule, refresh its report from the reviewed
+assignments and the source observations in the project.
+
+```bash
+openamundsen-da planner report --project-dir "$project" --period "$period" --schedule 7-day
+```
 
 `plot --period` writes `timeline.png` in the period directory. To compare all
 periods in one figure from the planner directory, run `plot --planner-dir .`
@@ -273,8 +295,10 @@ requirements and reports which timing and frequency checks it could apply.
 The planner also accepts standalone CSV or YAML tables through explicit paths.
 Use `--rules`, `--inventory`, `--year` and `--output` for selection with flat
 rules. The `holdouts` command also accepts grouped evaluation rules with
-explicit `period_start` and `period_end`. Standalone generation writes the
-target report beside the compact schedule. The planner can still read older
+explicit `period_start` and `period_end`. Standalone generation writes its
+PDF and grouped YAML beside the schedule, appending `.pdf` and `.details.yml`
+to the full output filename (for example, `trial.csv.pdf` and
+`trial.csv.details.yml`). The planner can still read older
 schedules containing full target rows. Use `--withheld` to supply shared
 evaluation observations when generating, validating or plotting. For a plot
 from selected files, repeat `--schedule [LABEL=]FILE` and set `--output`.

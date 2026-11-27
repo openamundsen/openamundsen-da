@@ -5,6 +5,7 @@ from datetime import date
 import pytest
 
 from openamundsen_da.cli import main
+from openamundsen_da.planner.reporting import read_report_targets
 from openamundsen_da.planner.tables import read_rows, write_rows
 
 
@@ -54,18 +55,31 @@ def test_generate_one_schedule_without_evaluation_and_preserve_edits(tmp_path):
     write_rows(project / "inventory.csv", [], fields=["date", "variable", "source_id"])
     args = ["planner", "generate", "--period", str(project), "--schedule", "my-trial"]
     assert main(args) == 0
-    selected = project / "schedules" / "my-trial.yml"
+    selected = project / "my-trial.schedule.yml"
+    assert not (project / "schedules").exists()
     assert read_rows(selected) == []
-    targets = read_rows(project / "reports/my-trial_targets.yml")
+    assert (project / "reports/my-trial.pdf").read_bytes().startswith(b"%PDF-")
+    assert not (project / "reports/details").exists()
+    targets = read_report_targets(project / "reports/my-trial_details.yml")
     assert [row["target_date"] for row in targets] == ["2020-03-01", "2020-03-08"]
     assert all(row["status"] == "missed" and row["reason"] for row in targets)
     export = tmp_path / "export" / "review.csv"
     assert main([*args, "--output", str(export)]) == 0
     assert export.read_text() == "date,variable\n"
-    assert read_rows(export.with_name("review_targets.csv")) == targets
+    assert read_report_targets(export.with_name("review.csv.details.yml")) == targets
     selected.write_text("# hand edit\n[]\n")
     assert main(args) == 1
     assert selected.read_text() == "# hand edit\n[]\n"
+    from openamundsen_da.planner.discovery import read_plot_schedule
+
+    assert len(read_plot_schedule(selected)[1]) == 2
+    next_rules = tmp_path / "schedules/second.yml"
+    next_rules.write_bytes((rules / "rules.yml").read_bytes())
+    assert main(["planner", "generate", "--period", str(project), "--schedule", "second"]) == 0
+    assert (project / "second.schedule.yml").is_file()
+    assert (project / "reports/second_details.yml").is_file()
+    assert not (project / "reports/details").exists()
+    assert not (project / "schedules").exists()
     (tmp_path / "evaluation.yml").write_text("[]\n")
     assert main([*args, "--overwrite"]) == 1
     assert selected.read_text() == "# hand edit\n[]\n"
@@ -102,7 +116,7 @@ def test_compact_updates_preserve_acquisition_and_station_selections(tmp_path, s
     write_rows(period / "withheld.yml", withheld)
 
     output = period / "schedules" / f"trial{suffix}"
-    targets_path = period / "reports" / f"trial_targets{suffix}"
+    targets_path = period / "reports/trial_details.yml"
     args = ["planner", "generate", "--period", str(period), "--schedule", "trial", "--output", str(output)]
     assert main([*args, "--summary", str(targets_path), "--overwrite"]) == 1
     assert not output.exists() and not targets_path.exists()
@@ -118,10 +132,10 @@ def test_compact_updates_preserve_acquisition_and_station_selections(tmp_path, s
         assert output.read_text().splitlines()[0] == "date,variable,observation_time,source_id,station_ids"
         actual = [{k: v for k, v in row.items() if v} for row in actual]
     assert actual == expected
-    targets = read_rows(targets_path)
+    targets = read_report_targets(targets_path)
     assert len(targets) == 6
-    assert [row["source_id"] for row in targets if row["variable"] == "scf"] == ["late.tif", "west.tif", ""]
-    assert [(row["status"], row["station_ids"]) for row in targets if row["variable"] == "station_hs"] == [
+    assert [row.get("source_id", "") for row in targets if row["variable"] == "scf"] == ["late.tif", "west.tif", ""]
+    assert [(row["status"], row.get("station_ids", "")) for row in targets if row["variable"] == "station_hs"] == [
         ("selected", "a|b"), ("missed", ""), ("selected", "b")
     ]
     targets_path.write_text("reviewed")
@@ -129,7 +143,7 @@ def test_compact_updates_preserve_acquisition_and_station_selections(tmp_path, s
     assert main(args) == 1
     assert not output.exists() and targets_path.read_text() == "reviewed"
     assert main([*args, "--overwrite"]) == 0
-    assert read_rows(targets_path) == targets
+    assert read_report_targets(targets_path) == targets
 
 
 def test_plot_a_short_campaign_has_readable_dates_and_no_withheld_row(tmp_path, monkeypatch):

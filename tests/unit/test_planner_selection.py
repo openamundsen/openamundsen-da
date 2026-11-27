@@ -8,6 +8,7 @@ import pytest
 from openamundsen_da.cli import main
 from openamundsen_da.planner.holdouts import generate_holdouts, schedule_summary
 from openamundsen_da.planner.selection import compile_rules, generate_schedule, matches_holdout, target_dates
+from openamundsen_da.planner.reporting import read_report_targets
 from openamundsen_da.planner.tables import read_rows, write_rows
 
 
@@ -253,7 +254,7 @@ def test_csv_yaml_round_trip_through_cli_and_editable_plot(tmp_path, monkeypatch
             str(schedule),
         ]
         assert main(generate) == 0
-        selections.append((read_rows(holds), read_rows(schedule), read_rows(tmp_path / f"events_targets.{suffix}")))
+        selections.append((read_rows(holds), read_rows(schedule), read_report_targets(tmp_path / f"events.{suffix}.details.yml")))
         assert not (tmp_path / f"held_targets.{suffix}").exists()
         assert main(generate) == 1
         assert main([*generate, "--overwrite"]) == 0
@@ -261,7 +262,7 @@ def test_csv_yaml_round_trip_through_cli_and_editable_plot(tmp_path, monkeypatch
     held, rows, targets = selections[0]
     assert held[0]["date"] == "2020-01-02"
     assert rows == [{"date": "2020-01-01", "variable": "scf"}]
-    assert [(r["target_date"], r["date"]) for r in targets] == [("2020-01-01", "2020-01-01"), ("2020-01-08", "")]
+    assert [(r["target_date"], r.get("date", "")) for r in targets] == [("2020-01-01", "2020-01-01"), ("2020-01-08", "")]
 
     from matplotlib.dates import date2num
     from openamundsen_da.methods.viz import common
@@ -377,7 +378,7 @@ def test_cli_preserves_other_outputs_when_any_destination_already_exists(tmp_pat
     summary = tmp_path / "selection_summary.csv"
     summary.write_text("reviewed summary\n")
     args = ["planner", "generate", "--rules", str(rules), "--inventory", str(inventory), "--year", "2020",
-            "--output", str(output), "--schedule", "trial"]
+            "--output", str(output), "--schedule", "trial", "--summary", str(summary)]
     assert main(args) == 1
     assert summary.read_text() == "reviewed summary\n"
     assert not output.exists()

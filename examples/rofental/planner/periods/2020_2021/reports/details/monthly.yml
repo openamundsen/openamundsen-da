@@ -1,0 +1,503 @@
+schedule: monthly
+observations:
+  wet_snow_line:
+    settings:
+      reschedule: true
+      tolerance_days: 7
+      min_spacing_days: 1
+      effective_limits:
+        min_n_wet: 50.0
+        min_support_coverage_ratio: 0.1
+        min_wet_bands: 1.0
+    exclusion_settings:
+      period_start: '2021-02-15'
+      period_end: '2021-06-30'
+      effective_limits:
+        min_n_wet: 50.0
+        min_support_coverage_ratio: 0.1
+        min_wet_bands: 1.0
+    summary:
+    - purpose: assimilation
+      period_start: '2021-02-15'
+      period_end: '2021-06-30'
+      requested: 5
+      selected: 2
+      min_spacing_days: 1
+      achieved_min_spacing_days: 22
+      reason: no observation passed quality screening | no observations within timing
+        tolerance and active period
+    targets:
+    - target_date: '2021-02-15'
+      status: missed
+      reason: no observations within timing tolerance and active period
+      available: 0
+      eligible: 0
+      withheld: 0
+    - target_date: '2021-03-15'
+      status: missed
+      reason: no observation passed quality screening
+      available: 6
+      eligible: 0
+      withheld: 0
+    - date: '2021-04-21'
+      observation_time: '2021-04-21T17:07:12Z'
+      source_id: WSM_S1B_SAR_track117_2021_04_21_17_06_32.tif
+      target_date: '2021-04-15'
+      status: selected
+      preferred_date: '2021-04-21'
+      offset_days: 6
+      quality_for_ranking: '6237'
+      available: 5
+      eligible: 1
+      withheld: 0
+    - date: '2021-05-13'
+      observation_time: '2021-05-13T05:26:24Z'
+      source_id: WSM_S1A_SAR_track168_2021_05_13_05_27_28.tif
+      target_date: '2021-05-15'
+      status: selected
+      preferred_date: '2021-05-13'
+      offset_days: -2
+      quality_for_ranking: '6297'
+      available: 5
+      eligible: 4
+      withheld: 1
+    - target_date: '2021-06-15'
+      status: missed
+      reason: no observation passed quality screening
+      available: 4
+      eligible: 0
+      withheld: 0
+    exclusions:
+    - date: '2021-03-02'
+      observation_time: '2021-03-02T05:26:24Z'
+      source_id: WSM_S1A_SAR_track168_2021_03_02_05_27_26.tif
+      reason: wet_snow_line unavailable or out of range; no_crossing_fraction
+    - date: '2021-03-04'
+      observation_time: '2021-03-04T17:07:12Z'
+      source_id: WSM_S1B_SAR_track117_2021_03_04_17_06_13.tif
+      reason: wet_snow_line unavailable or out of range; no_crossing_fraction
+    - date: '2021-03-10'
+      observation_time: '2021-03-10T17:07:12Z'
+      source_id: WSM_S1A_SAR_track117_2021_03_10_17_07_12.tif
+      reason: wet_snow_line unavailable or out of range; no_crossing_fraction
+    - date: '2021-03-14'
+      observation_time: '2021-03-14T05:26:24Z'
+      source_id: WSM_S1A_SAR_track168_2021_03_14_05_27_26.tif
+      reason: wet_snow_line unavailable or out of range; no_crossing_fraction
+    - date: '2021-03-16'
+      observation_time: '2021-03-16T17:07:12Z'
+      source_id: WSM_S1B_SAR_track117_2021_03_16_17_06_14.tif
+      reason: wet_snow_line unavailable or out of range; no_crossing_fraction | n_wet=35
+        fails min_n_wet=50
+    - date: '2021-03-22'
+      observation_time: '2021-03-22T17:07:12Z'
+      source_id: WSM_S1A_SAR_track117_2021_03_22_17_07_13.tif
+      reason: wet_snow_line unavailable or out of range; no_crossing_fraction | n_wet=26
+        fails min_n_wet=50
+    - date: '2021-03-26'
+      observation_time: '2021-03-26T05:26:24Z'
+      source_id: WSM_S1A_SAR_track168_2021_03_26_05_27_26.tif
+      reason: wet_snow_line unavailable or out of range; no_crossing_fraction
+    - date: '2021-03-28'
+      observation_time: '2021-03-28T17:07:12Z'
+      source_id: WSM_S1B_SAR_track117_2021_03_28_17_06_31.tif
+      reason: wet_snow_line unavailable or out of range; no_crossing_fraction
+    - date: '2021-04-01'
+      observation_time: '2021-04-01T05:26:24Z'
+      source_id: WSM_S1B_SAR_track168_2021_04_01_05_26_44.tif
+      reason: wet_snow_line unavailable or out of range; no_crossing_fraction
+    - date: '2021-04-03'
+      observation_time: '2021-04-03T17:07:12Z'
+      source_id: WSM_S1A_SAR_track117_2021_04_03_17_07_13.tif
+      reason: wet_snow_line unavailable or out of range; no_crossing_fraction
+    - date: '2021-04-09'
+      observation_time: '2021-04-09T17:07:12Z'
+      source_id: WSM_S1B_SAR_track117_2021_04_09_17_06_31.tif
+      reason: wet_snow_line unavailable or out of range; no_crossing_fraction
+    - date: '2021-04-13'
+      observation_time: '2021-04-13T05:26:24Z'
+      source_id: WSM_S1B_SAR_track168_2021_04_13_05_26_45.tif
+      reason: wet_snow_line unavailable or out of range; no_crossing_fraction
+    - date: '2021-04-15'
+      observation_time: '2021-04-15T17:07:12Z'
+      source_id: WSM_S1A_SAR_track117_2021_04_15_17_07_13.tif
+      reason: wet_snow_line unavailable or out of range; no_crossing_fraction
+    - date: '2021-04-19'
+      observation_time: '2021-04-19T05:26:24Z'
+      source_id: WSM_S1A_SAR_track168_2021_04_19_05_27_27.tif
+      reason: wet_snow_line unavailable or out of range; no_crossing_fraction
+    - date: '2021-04-25'
+      observation_time: '2021-04-25T05:26:24Z'
+      source_id: WSM_S1B_SAR_track168_2021_04_25_05_26_45.tif
+      reason: wet_snow_line unavailable or out of range; no_crossing_fraction
+    - date: '2021-05-03'
+      observation_time: '2021-05-03T17:07:12Z'
+      source_id: WSM_S1B_SAR_track117_2021_05_03_17_06_32.tif
+      reason: withheld
+    - date: '2021-05-09'
+      observation_time: '2021-05-09T17:07:12Z'
+      source_id: WSM_S1A_SAR_track117_2021_05_09_17_07_14.tif
+      reason: wet_snow_line unavailable or out of range; no_crossing_fraction
+    - date: '2021-05-19'
+      observation_time: '2021-05-19T05:26:24Z'
+      source_id: WSM_S1B_SAR_track168_2021_05_19_05_26_47.tif
+      reason: withheld
+    - date: '2021-06-02'
+      observation_time: '2021-06-02T17:07:12Z'
+      source_id: WSM_S1A_SAR_track117_2021_06_02_17_07_16.tif
+      reason: wet_snow_line unavailable or out of range; no_crossing_fraction
+    - date: '2021-06-06'
+      observation_time: '2021-06-06T05:26:24Z'
+      source_id: WSM_S1A_SAR_track168_2021_06_06_05_27_29.tif
+      reason: wet_snow_line unavailable or out of range; no_crossing_fraction
+    - date: '2021-06-12'
+      observation_time: '2021-06-12T05:26:24Z'
+      source_id: WSM_S1B_SAR_track168_2021_06_12_05_26_48.tif
+      reason: wet_snow_line unavailable or out of range; no_crossing_fraction
+    - date: '2021-06-14'
+      observation_time: '2021-06-14T17:07:12Z'
+      source_id: WSM_S1A_SAR_track117_2021_06_14_17_07_17.tif
+      reason: wet_snow_line unavailable or out of range; no_crossing_fraction
+    - date: '2021-06-18'
+      observation_time: '2021-06-18T05:26:24Z'
+      source_id: WSM_S1A_SAR_track168_2021_06_18_05_27_30.tif
+      reason: wet_snow_line unavailable or out of range; no_crossing_fraction
+    - date: '2021-06-20'
+      observation_time: '2021-06-20T17:07:12Z'
+      source_id: WSM_S1B_SAR_track117_2021_06_20_17_06_35.tif
+      reason: wet_snow_line unavailable or out of range; no_crossing_fraction
+    - date: '2021-06-24'
+      observation_time: '2021-06-24T05:26:24Z'
+      source_id: WSM_S1B_SAR_track168_2021_06_24_05_26_49.tif
+      reason: wet_snow_line unavailable or out of range; no_crossing_fraction
+    - date: '2021-06-26'
+      observation_time: '2021-06-26T17:07:12Z'
+      source_id: WSM_S1A_SAR_track117_2021_06_26_17_07_17.tif
+      reason: wet_snow_line unavailable or out of range; no_crossing_fraction
+    - date: '2021-06-30'
+      observation_time: '2021-06-30T05:26:24Z'
+      source_id: WSM_S1A_SAR_track168_2021_06_30_05_27_31.tif
+      reason: wet_snow_line unavailable or out of range; no_crossing_fraction
+    - date: '2021-03-08'
+      observation_time: '2021-03-08T05:26:24Z'
+      source_id: WSM_S1B_SAR_track168_2021_03_08_05_27_03.tif
+      reason: no observation row in wet_snow_summary.csv; no valid pixels in the project
+        area | support_coverage_ratio=0 fails min_support_coverage_ratio=0.1 | n_wet
+        unavailable (min_n_wet=50) | wet_bands unavailable (min_wet_bands=1)
+    - date: '2021-03-20'
+      observation_time: '2021-03-20T05:26:24Z'
+      source_id: WSM_S1B_SAR_track168_2021_03_20_05_27_03.tif
+      reason: no observation row in wet_snow_summary.csv; no valid pixels in the project
+        area | support_coverage_ratio=0 fails min_support_coverage_ratio=0.1 | n_wet
+        unavailable (min_n_wet=50) | wet_bands unavailable (min_wet_bands=1)
+  scf:
+    settings:
+      reschedule: true
+      tolerance_days: 7
+      min_spacing_days: 1
+      effective_limits:
+        min_support_coverage_ratio: 0.1
+    exclusion_settings:
+      period_start: '2020-10-01'
+      period_end: '2021-06-30'
+      effective_limits:
+        min_support_coverage_ratio: 0.1
+    summary:
+    - purpose: assimilation
+      period_start: '2020-10-01'
+      period_end: '2021-06-30'
+      requested: 9
+      selected: 8
+      min_spacing_days: 1
+      achieved_min_spacing_days: 17
+      reason: no observation passed quality screening
+    targets:
+    - target_date: '2020-10-01'
+      status: missed
+      reason: no observation passed quality screening
+      available: 1
+      eligible: 0
+      withheld: 0
+    - date: '2020-11-07'
+      observation_time: '2020-11-07T10:22:31.024000Z'
+      source_id: s2_fsc_snowflake_rofental_2020_11_07.tif
+      target_date: '2020-11-01'
+      status: selected
+      preferred_date: '2020-11-07'
+      offset_days: 6
+      quality_for_ranking: '3279'
+      available: 4
+      eligible: 4
+      withheld: 0
+    - date: '2020-11-29'
+      observation_time: '2020-11-29T10:13:59.024000Z'
+      source_id: s2_fsc_snowflake_rofental_2020_11_29.tif
+      target_date: '2020-12-01'
+      status: selected
+      preferred_date: '2020-11-29'
+      offset_days: -2
+      quality_for_ranking: '2566'
+      available: 2
+      eligible: 2
+      withheld: 0
+    - date: '2021-01-08'
+      observation_time: '2021-01-08T10:13:19.024000Z'
+      source_id: s2_fsc_snowflake_rofental_2021_01_08.tif
+      target_date: '2021-01-01'
+      status: selected
+      preferred_date: '2021-01-08'
+      offset_days: 7
+      quality_for_ranking: '2756'
+      available: 1
+      eligible: 1
+      withheld: 0
+    - date: '2021-02-05'
+      observation_time: '2021-02-05T10:22:21.024000Z'
+      source_id: s2_fsc_snowflake_rofental_2021_02_05.tif
+      target_date: '2021-02-01'
+      status: selected
+      preferred_date: '2021-02-05'
+      offset_days: 4
+      quality_for_ranking: '5097'
+      available: 1
+      eligible: 1
+      withheld: 0
+    - date: '2021-02-22'
+      observation_time: '2021-02-22T10:10:21.024000Z'
+      source_id: s2_fsc_snowflake_rofental_2021_02_22.tif
+      target_date: '2021-03-01'
+      status: selected
+      preferred_date: '2021-02-22'
+      offset_days: -7
+      quality_for_ranking: '5202'
+      available: 4
+      eligible: 3
+      withheld: 0
+    - date: '2021-03-29'
+      observation_time: '2021-03-29T10:06:09.024000Z'
+      source_id: s2_fsc_snowflake_rofental_2021_03_29.tif
+      target_date: '2021-04-01'
+      status: selected
+      preferred_date: '2021-03-29'
+      offset_days: -3
+      quality_for_ranking: '4842'
+      available: 5
+      eligible: 4
+      withheld: 0
+    - date: '2021-05-03'
+      observation_time: '2021-05-03T10:10:21.024000Z'
+      source_id: s2_fsc_snowflake_rofental_2021_05_03.tif
+      target_date: '2021-05-01'
+      status: selected
+      preferred_date: '2021-05-03'
+      offset_days: 2
+      quality_for_ranking: '3579'
+      available: 3
+      eligible: 3
+      withheld: 0
+    - date: '2021-05-31'
+      observation_time: '2021-05-31T10:15:59.024000Z'
+      source_id: s2_fsc_snowflake_rofental_2021_05_31.tif
+      target_date: '2021-06-01'
+      status: selected
+      preferred_date: '2021-05-31'
+      offset_days: -1
+      quality_for_ranking: '4364'
+      available: 4
+      eligible: 3
+      withheld: 1
+    exclusions:
+    - date: '2020-10-08'
+      observation_time: '2020-10-08T10:20:31.024000Z'
+      source_id: s2_fsc_snowflake_rofental_2020_10_08.tif
+      reason: support_coverage_ratio=0.0201413 fails min_support_coverage_ratio=0.1
+    - date: '2020-12-19'
+      observation_time: '2020-12-19T10:13:29.024000Z'
+      source_id: s2_fsc_snowflake_rofental_2020_12_19.tif
+      reason: withheld
+    - date: '2021-01-13'
+      observation_time: '2021-01-13T10:14:01.024000Z'
+      source_id: s2_fsc_snowflake_rofental_2021_01_13.tif
+      reason: support_coverage_ratio=0.0632797 fails min_support_coverage_ratio=0.1
+    - date: '2021-01-18'
+      observation_time: '2021-01-18T10:12:49.024000Z'
+      source_id: s2_fsc_snowflake_rofental_2021_01_18.tif
+      reason: support_coverage_ratio=0.0187885 fails min_support_coverage_ratio=0.1
+    - date: '2021-02-27'
+      observation_time: '2021-02-27T10:10:29.024000Z'
+      source_id: s2_fsc_snowflake_rofental_2021_02_27.tif
+      reason: support_coverage_ratio=0.00646325 fails min_support_coverage_ratio=0.1
+    - date: '2021-04-06'
+      observation_time: '2021-04-06T10:20:21.025000Z'
+      source_id: s2_fsc_snowflake_rofental_2021_04_06.tif
+      reason: support_coverage_ratio=0.0264542 fails min_support_coverage_ratio=0.1
+    - date: '2021-04-16'
+      observation_time: '2021-04-16T10:20:21.024000Z'
+      source_id: s2_fsc_snowflake_rofental_2021_04_16.tif
+      reason: withheld
+    - date: '2021-05-28'
+      observation_time: '2021-05-28T10:05:59.024000Z'
+      source_id: s2_fsc_snowflake_rofental_2021_05_28.tif
+      reason: withheld
+    - date: '2021-06-05'
+      observation_time: '2021-06-05T10:20:21.024000Z'
+      source_id: s2_fsc_snowflake_rofental_2021_06_05.tif
+      reason: support_coverage_ratio=0.0252518 fails min_support_coverage_ratio=0.1
+    - date: '2021-06-12'
+      observation_time: '2021-06-12T10:10:31.024000Z'
+      source_id: s2_fsc_snowflake_rofental_2021_06_12.tif
+      reason: withheld
+    - date: '2021-06-25'
+      observation_time: '2021-06-25T10:20:21.024000Z'
+      source_id: s2_fsc_snowflake_rofental_2021_06_25.tif
+      reason: support_coverage_ratio=0.00571171 fails min_support_coverage_ratio=0.1
+  station_hs:
+    settings:
+      reschedule: true
+      tolerance_days: 7
+      min_spacing_days: 1
+      effective_limits:
+        min_station_count: 2.0
+    exclusion_settings:
+      period_start: '2020-11-01'
+      period_end: '2021-02-28'
+      effective_limits:
+        min_station_count: 2.0
+    summary:
+    - purpose: assimilation
+      period_start: '2020-11-01'
+      period_end: '2021-02-28'
+      requested: 4
+      selected: 4
+      min_spacing_days: 1
+      achieved_min_spacing_days: 30
+    targets:
+    - date: '2020-11-01'
+      observation_time: '2020-10-31T23:00:00+00:00'
+      station_ids: latschbloder|proviantdepot
+      target_date: '2020-11-01'
+      status: selected
+      preferred_date: '2020-11-01'
+      offset_days: 0
+      quality_for_ranking: '2'
+      available: 8
+      eligible: 4
+      withheld: 0
+    - date: '2020-12-02'
+      observation_time: '2020-12-01T23:00:00+00:00'
+      station_ids: latschbloder|proviantdepot
+      target_date: '2020-12-01'
+      status: selected
+      preferred_date: '2020-12-02'
+      offset_days: 1
+      quality_for_ranking: '2'
+      available: 15
+      eligible: 10
+      withheld: 0
+    - date: '2021-01-01'
+      observation_time: '2020-12-31T23:00:00+00:00'
+      station_ids: latschbloder|proviantdepot
+      target_date: '2021-01-01'
+      status: selected
+      preferred_date: '2021-01-01'
+      offset_days: 0
+      quality_for_ranking: '2'
+      available: 15
+      eligible: 14
+      withheld: 0
+    - date: '2021-02-01'
+      observation_time: '2021-01-31T23:00:00+00:00'
+      station_ids: latschbloder|proviantdepot
+      target_date: '2021-02-01'
+      status: selected
+      preferred_date: '2021-02-01'
+      offset_days: 0
+      quality_for_ranking: '2'
+      available: 15
+      eligible: 15
+      withheld: 0
+    exclusions:
+    - date: '2020-11-03'
+      observation_time: '2020-11-02T23:00:00+00:00'
+      station_ids: latschbloder
+      reason: station_count=1 fails min_station_count=2
+    - date: '2020-11-06'
+      observation_time: '2020-11-05T23:00:00+00:00'
+      station_ids: proviantdepot
+      reason: station_count=1 fails min_station_count=2
+    - date: '2020-11-07'
+      observation_time: '2020-11-06T23:00:00+00:00'
+      reason: no usable stations | no contributing station_ids | station_count=0 fails
+        min_station_count=2
+    - date: '2020-11-08'
+      observation_time: '2020-11-07T23:00:00+00:00'
+      reason: no usable stations | no contributing station_ids | station_count=0 fails
+        min_station_count=2
+    - date: '2020-11-09'
+      observation_time: '2020-11-08T23:00:00+00:00'
+      reason: no usable stations | no contributing station_ids | station_count=0 fails
+        min_station_count=2
+    - date: '2020-11-10'
+      observation_time: '2020-11-09T23:00:00+00:00'
+      reason: no usable stations | no contributing station_ids | station_count=0 fails
+        min_station_count=2
+    - date: '2020-11-11'
+      observation_time: '2020-11-10T23:00:00+00:00'
+      station_ids: proviantdepot
+      reason: station_count=1 fails min_station_count=2
+    - date: '2020-11-12'
+      observation_time: '2020-11-11T23:00:00+00:00'
+      station_ids: proviantdepot
+      reason: station_count=1 fails min_station_count=2
+    - date: '2020-11-13'
+      observation_time: '2020-11-12T23:00:00+00:00'
+      reason: no usable stations | no contributing station_ids | station_count=0 fails
+        min_station_count=2
+    - date: '2020-11-14'
+      observation_time: '2020-11-13T23:00:00+00:00'
+      station_ids: proviantdepot
+      reason: station_count=1 fails min_station_count=2
+    - date: '2020-11-15'
+      observation_time: '2020-11-14T23:00:00+00:00'
+      station_ids: proviantdepot
+      reason: station_count=1 fails min_station_count=2
+    - date: '2020-11-16'
+      observation_time: '2020-11-15T23:00:00+00:00'
+      station_ids: proviantdepot
+      reason: station_count=1 fails min_station_count=2
+    - date: '2020-11-20'
+      observation_time: '2020-11-19T23:00:00+00:00'
+      station_ids: latschbloder
+      reason: station_count=1 fails min_station_count=2
+    - date: '2020-11-25'
+      observation_time: '2020-11-24T23:00:00+00:00'
+      station_ids: proviantdepot
+      reason: station_count=1 fails min_station_count=2
+    - date: '2020-11-27'
+      observation_time: '2020-11-26T23:00:00+00:00'
+      station_ids: latschbloder
+      reason: station_count=1 fails min_station_count=2
+    - date: '2020-11-30'
+      observation_time: '2020-11-29T23:00:00+00:00'
+      reason: no usable stations | no contributing station_ids | station_count=0 fails
+        min_station_count=2
+    - date: '2020-12-01'
+      observation_time: '2020-11-30T23:00:00+00:00'
+      station_ids: proviantdepot
+      reason: station_count=1 fails min_station_count=2
+    - date: '2020-12-07'
+      observation_time: '2020-12-06T23:00:00+00:00'
+      station_ids: latschbloder
+      reason: station_count=1 fails min_station_count=2
+    - date: '2020-12-17'
+      observation_time: '2020-12-16T23:00:00+00:00'
+      station_ids: latschbloder
+      reason: station_count=1 fails min_station_count=2
+    - date: '2020-12-24'
+      observation_time: '2020-12-23T23:00:00+00:00'
+      station_ids: latschbloder
+      reason: station_count=1 fails min_station_count=2
+    - date: '2020-12-27'
+      observation_time: '2020-12-26T23:00:00+00:00'
+      station_ids: latschbloder
+      reason: station_count=1 fails min_station_count=2

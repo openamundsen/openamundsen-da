@@ -13,7 +13,7 @@ single-domain data assimilation and explicit subdomain workflows. Run
 
 ## Observation Planner
 
-Use `openamundsen-da planner --help` for the inventory, holdout selection, schedule generation, validation and timeline commands. [Observation Planner guide]({{ site.baseurl }}{% link guides/observation-planner.md %})
+Use `openamundsen-da planner --help` for the inventory, holdout selection, schedule generation, reporting, validation and timeline commands. Use `planner report` to refresh the report after reviewing and editing a schedule. [Observation Planner guide]({{ site.baseurl }}{% link guides/observation-planner.md %})
 
 ## Paths and notation
 

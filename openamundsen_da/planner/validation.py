@@ -14,8 +14,10 @@ import pandas as pd
 
 from openamundsen_da.io.paths import find_project_yaml, find_setup_yaml
 from openamundsen_da.planner.layout import (
-    compile_period_rules, load_evaluation_rules, load_schedule_rules, read_period, schedule_rules_path, table_path,
+    PlanningPeriod, compile_period_rules, load_evaluation_rules, load_schedule_rules, read_period,
+    schedule_rules_path, schedule_table_path, table_path,
 )
+from openamundsen_da.planner.selection import Rule
 from openamundsen_da.planner.tables import read_rows
 from openamundsen_da.util.observation_time import match_observation_to_model_time, parse_model_timestep, parse_utc_timestamp
 from openamundsen_da.util.station_da import is_station_variable
@@ -28,6 +30,11 @@ class ScheduleReport:
     errors: list[str] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
     checks: list[str] = field(default_factory=list)
+    assignments: dict[tuple[str, str], dict] = field(default_factory=dict)
+    period: PlanningPeriod | None = None
+    rules: list[Rule] = field(default_factory=list)
+    inventory: list[dict] = field(default_factory=list)
+    withheld: list[dict] | None = None
 
 
 def _value(row, key):
@@ -117,12 +124,12 @@ def _inputs(project_dir, da, *, schedule=None, inventory=None, rules=None, withh
             if len(labels) == 1:
                 name = next(iter(labels))
             elif isinstance(source, Path):
-                name = source.stem
+                name = source.stem.removesuffix(".schedule") if source.parent == period_dir else source.stem
         if not name:
             raise ValueError("specify a schedule name for the planning period")
         default_rules = schedule_rules_path(period_dir, name)
         if period is not None and schedule is None:
-            source = table_path(period_dir / "schedules", name)
+            source = schedule_table_path(period_dir, name)
         discovered = [period_dir / "period.yml"]
         if rules is None:
             rules = default_rules
@@ -289,7 +296,7 @@ def _identify(row, matches):
         missing = sorted(set(selected) - available)
         if missing:
             raise ValueError(f"station_ids: unavailable: {', '.join(missing)}")
-        observation.update(station_ids="|".join(selected), station_count=len(selected))
+        observation.update(station_ids="|".join(selected), station_count=len(selected), quality_for_ranking=len(selected))
     return observation
 
 
@@ -462,10 +469,13 @@ def validate_schedule(project_dir, *, schedule=None, inventory=None, rules=None,
                          schedule_name=schedule_name, period=period)
         rows = _read_table(inputs.schedule, project_dir)
         withheld_rows = _read_table(inputs.withheld, project_dir)
+        if inputs.withheld:
+            report.withheld = withheld_rows
         start = datetime.fromisoformat(str(project["start_date"])).date()
         end = datetime.fromisoformat(str(project["end_date"])).date()
         timestep = parse_model_timestep(setup.get("timestep"))
         plan = read_period(inputs.period_dir) if inputs.period_dir else None
+        report.period = plan
         base_year = year
         if base_year is None and period is None:
             base_year = da.get("observation_planner", {}).get("year")
@@ -504,6 +514,7 @@ def validate_schedule(project_dir, *, schedule=None, inventory=None, rules=None,
         else:
             report.errors.append(f"schedule: choose one rules schedule from {sorted(names)}")
     active = [r for r in compiled if r.purpose == "assimilation" and r.schedule == chosen]
+    report.rules = active
     if compiled and not active:
         report.errors.append(f"schedule: no assimilation rules for {chosen!r}")
     report.checks += ["structure, project period and products, observation identity and quality, same-date conflicts",
@@ -520,6 +531,7 @@ def validate_schedule(project_dir, *, schedule=None, inventory=None, rules=None,
         try:
             inventory_rows = _read_table(inputs.inventory, project_dir)
             validate_inventory(inventory_rows)
+            report.inventory = inventory_rows
             for i, item in enumerate(inventory_rows, 1):
                 variable = _value(item, "variable")
                 if not variable or (not is_station_variable(variable) and not _value(item, "source_id")):
@@ -576,6 +588,8 @@ def validate_schedule(project_dir, *, schedule=None, inventory=None, rules=None,
                     assigned[key] = i
             if not row["date"]:
                 report.warnings.append(f"{label} date: missed target {row['target_date']}")
+                if not is_withheld and target:
+                    report.assignments[variable, target.isoformat()] = row
                 continue
             if target and not start <= target <= end:
                 report.errors.append(f"{label} target_date: outside project period {start} through {end}")
@@ -635,6 +649,12 @@ def validate_schedule(project_dir, *, schedule=None, inventory=None, rules=None,
                     if _value(obs, key):
                         event[key] = _value(obs, key)
                 report.events.append(event)
+                if target:
+                    report.assignments[variable, target.isoformat()] = {
+                        **obs,
+                        "reason": row.get("reason", ""),
+                        "timing_exception_reason": row.get("timing_exception_reason", ""),
+                    }
             except (OSError, TypeError, ValueError, KeyError) as exc:
                 report.errors.append(f"{label}: {exc}")
     for series_name, series in (("schedule", assigned_dates), ("withheld", evaluation_dates)):

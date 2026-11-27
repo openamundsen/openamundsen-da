@@ -506,4 +506,4 @@ station altitudes distributed by the upstream Rofental example, including
 
 ## Observation Planner
 
-Run `pytest -q tests/unit -k planner` for the observation planner contracts, including editable table formats and selection using the project observation inputs.
+Run `pytest -q tests/unit -k planner` for the Observation Planner contracts. The Rofental replay regenerates schedules and grouped reporting details from the four shipped CSV inventories and checks the reviewed assignments, withheld observations and timeline counts.

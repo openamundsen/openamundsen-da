@@ -122,6 +122,62 @@ def test_overlapping_target_windows_preserve_generated_bindings_and_validate_edi
     assert any("equally near 2022-11-03 and 2022-11-07" in error for error in report.errors)
 
 
+def test_refresh_reports_for_added_replaced_and_removed_updates(project):
+    from openamundsen_da.cli import main
+    from openamundsen_da.planner.layout import report_paths
+    from openamundsen_da.planner.reporting import read_report_targets
+
+    planner = project.parent.parent / "planner"
+    period = planner / "periods" / "november"
+    period.mkdir(parents=True)
+    (period / "period.yml").write_text("start: 2022-11-03\nend: 2022-11-14\n")
+    (planner / "schedules").mkdir()
+    (planner / "schedules/dense.yml").write_text(
+        "defaults: {frequency: 3, tolerance_days: 3, reschedule: true}\n"
+        "observations:\n  station_hs:\n    priority: 1\n    intervals:\n"
+        "      - {period_start: 2022-11-03, period_end: 2022-11-08}\n"
+        "      - {period_start: 2022-11-09, period_end: 2022-11-14, tolerance_days: 0}\n"
+    )
+    days = [f"2022-11-{n:02d}" for n in (6, 7, 8, 10, 12)]
+    inventory = build_inventory(project, days[0], days[-1], ["station_hs"], dates=days)
+    write_rows(period / "inventory.yml", inventory)
+    name = "dense"
+    schedule = period / "schedules" / f"{name}.csv"
+    rows = [
+        {"date": days[0], "variable": "station_hs"},
+        {"date": days[2], "variable": "station_hs", "station_ids": "latschbloder"},
+        {"date": days[3], "variable": "station_hs", "target_date": "2022-11-09",
+         "timing_exception_reason": "reviewed station availability"},
+    ]
+    write_rows(schedule, rows)
+    before = schedule.read_bytes()
+    args = ["planner", "report", "--project-dir", str(project), "--period", str(period), "--schedule", name]
+    assert main(args) == 0
+    assert schedule.read_bytes() == before
+    pdf, detail = report_paths(period, schedule)
+    assert pdf.read_bytes().startswith(b"%PDF")
+    targets = read_report_targets(detail)
+    assert [(r["target_date"], r.get("date")) for r in targets] == [
+        ("2022-11-03", days[0]), ("2022-11-06", days[2]), ("2022-11-09", days[3]), ("2022-11-12", None),
+    ]
+    assert "reason" not in targets[0]
+    assert "Manual replacement" in targets[1]["reason"] and days[1] in targets[1]["reason"]
+    assert targets[1]["station_ids"] == "latschbloder" and targets[1]["quality_for_ranking"] == 1
+    assert "Manual addition" in targets[2]["reason"] and "reviewed station availability" in targets[2]["reason"]
+    assert "Manual removal" in targets[3]["reason"] and days[-1] in targets[3]["reason"]
+    section = YAML(typ="safe").load(detail)["observations"]["station_hs"]
+    assert [r["selected"] for r in section["summary"]] == [2, 1]
+    assert {r["date"] for r in section["exclusions"]} == {days[1], days[-1]}
+
+    old_reports = pdf.read_bytes(), detail.read_bytes()
+    write_rows(schedule, [*rows, {"date": days[-1], "variable": "station_hs", "station_ids": "missing"}],
+               overwrite=True)
+    invalid = schedule.read_bytes()
+    assert main(args) == 1
+    assert schedule.read_bytes() == invalid
+    assert (pdf.read_bytes(), detail.read_bytes()) == old_reports
+
+
 def test_unreadable_uncertainty_is_reported_for_every_row_and_repair_is_checked(project):
     dates = ["2022-10-03", "2022-10-05"]
     rows = [dict(variable="scf", date=day) for day in dates]
