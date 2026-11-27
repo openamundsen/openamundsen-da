@@ -13,7 +13,6 @@ ROOT = SCRIPT.parents[2]
 RELEASE_WORKFLOW = ROOT / ".github" / "workflows" / "release.yml"
 CI_WORKFLOW = ROOT / ".github" / "workflows" / "ci.yml"
 DOCS_WORKFLOW = ROOT / ".github" / "workflows" / "deploy-docs.yml"
-CLOUDFLARE_WORKFLOW = ROOT / ".github" / "workflows" / "deploy-cloudflare.yml"
 CITATION = ROOT / "CITATION.cff"
 SPEC = importlib.util.spec_from_file_location("validate_release", SCRIPT)
 assert SPEC is not None and SPEC.loader is not None
@@ -290,9 +289,8 @@ def test_docs_deployment_tracks_only_the_dedicated_tutorial_asset_manifest() -> 
     assert "tests/baselines/rofental_es30_manuscript_assets.json" not in workflow
 
 
-def test_docs_deployment_uses_github_pages_and_keeps_cloudflare_manual() -> None:
+def test_docs_deployment_uses_github_pages() -> None:
     pages = DOCS_WORKFLOW.read_text(encoding="utf-8")
-    cloudflare = CLOUDFLARE_WORKFLOW.read_text(encoding="utf-8")
 
     assert "name: Deploy Docs to GitHub Pages" in pages
     assert "  push:\n    branches:\n      - main" in pages
@@ -300,14 +298,6 @@ def test_docs_deployment_uses_github_pages_and_keeps_cloudflare_manual() -> None
     assert "actions/upload-pages-artifact@" in pages
     assert "actions/deploy-pages@" in pages
     assert "name: github-pages" in pages
-    assert "cloudflare/wrangler-action@" not in pages
-
-    assert "name: Deploy Docs to Cloudflare Pages (manual fallback)" in cloudflare
-    assert "  workflow_dispatch:" in cloudflare
-    assert "  push:" not in cloudflare
-    assert "CLOUDFLARE_AUTO_DEPLOY" not in cloudflare
-    assert "cloudflare/wrangler-action@" in cloudflare
-    assert "pages deploy docs/_site --project-name=openamundsen-da" in cloudflare
 
 
 def test_container_publication_and_public_usage_target_organization() -> None:
