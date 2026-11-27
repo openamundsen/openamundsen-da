@@ -1,0 +1,16 @@
+purpose,variable,period_start,period_end,schedule,frequency,tolerance_days,priority,reschedule,ranking,min_spacing_days,min_support_coverage_ratio,min_n_wet,min_wet_bands,min_station_count,strategy,count,year
+assimilation,wet_snow_line,1-02-15,1-06-30,monthly,monthly,7,1,true,quality,1,0.1,50,1,,,,
+assimilation,scf,0-10-01,1-06-30,monthly,monthly,7,2,true,quality,1,0.1,,,,,,
+assimilation,station_hs,0-11-01,1-02-last,monthly,monthly,7,3,true,nearest,1,,,,2,,,
+assimilation,wet_snow_line,1-02-15,1-06-30,14-day,14,3,1,true,quality,1,0.1,50,1,,,,
+assimilation,scf,0-10-01,1-06-30,14-day,14,3,2,true,quality,1,0.1,,,,,,
+assimilation,station_hs,0-11-01,1-02-last,14-day,14,3,3,true,nearest,1,,,,2,,,
+assimilation,wet_snow_line,1-02-15,1-06-30,7-day,7,2,1,true,quality,1,0.1,50,1,,,,
+assimilation,scf,0-10-01,1-06-30,7-day,7,2,2,true,quality,1,0.1,,,,,,
+assimilation,station_hs,0-11-01,1-02-last,7-day,7,2,3,true,nearest,1,,,,2,,,
+evaluation,scf,0-10-01,0-12-31,,,,,,,14,,,,,best,1,
+evaluation,scf,1-04-01,1-06-30,,,,,,,14,,,,,best_per_month,3,
+evaluation,wet_snow_line,1-02-15,1-06-30,,,,,,,14,,,,,spread,2,2019
+evaluation,wet_snow_line,1-02-15,1-06-30,,,,,,,14,,,,,spread,2,2020
+evaluation,wet_snow_line,1-02-15,1-06-30,,,,,,,14,,,,,spread,1,2021
+evaluation,wet_snow_line,1-02-15,1-06-30,,,,,,,14,,,,,spread,2,2022

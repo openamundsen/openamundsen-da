@@ -1,0 +1,78 @@
+variable,date,observation_time,source_id,station_ids,schedule,target_date,status,reason,preferred_date,conflict_with,reschedule,offset_days,tolerance_days,min_spacing_days,quality_for_ranking,effective_limits,available,eligible,withheld
+scf,,,,,7-day,2020-10-01,missed,no observations within timing tolerance and active period,,,True,,2,1,,"{""min_support_coverage_ratio"": 0.1}",0,0,0
+scf,2020-10-10,2020-10-10T10:10:29.024000Z,s2_fsc_snowflake_rofental_2020_10_10.tif,,7-day,2020-10-08,selected,,2020-10-10,,True,2,2,1,2273,"{""min_support_coverage_ratio"": 0.1}",2,1,0
+scf,,,,,7-day,2020-10-15,missed,no observations within timing tolerance and active period,,,True,,2,1,,"{""min_support_coverage_ratio"": 0.1}",0,0,0
+scf,,,,,7-day,2020-10-22,missed,no observations within timing tolerance and active period,,,True,,2,1,,"{""min_support_coverage_ratio"": 0.1}",0,0,0
+scf,2020-10-30,2020-10-30T10:11:39.024000Z,s2_fsc_snowflake_rofental_2020_10_30.tif,,7-day,2020-10-29,selected,,2020-10-30,,True,1,2,1,1084,"{""min_support_coverage_ratio"": 0.1}",1,1,0
+station_hs,2020-11-01,2020-10-31T23:00:00+00:00,,latschbloder|proviantdepot,7-day,2020-11-01,selected,,2020-11-01,,True,0,2,1,2,"{""min_station_count"": 2.0}",3,2,0
+scf,2020-11-07,2020-11-07T10:22:31.024000Z,s2_fsc_snowflake_rofental_2020_11_07.tif,,7-day,2020-11-05,selected,,2020-11-07,,True,2,2,1,3279,"{""min_support_coverage_ratio"": 0.1}",1,1,0
+station_hs,,,,,7-day,2020-11-08,missed,no observation passed quality screening,,,True,,2,1,,"{""min_station_count"": 2.0}",5,0,0
+scf,2020-11-14,2020-11-14T10:13:01.024000Z,s2_fsc_snowflake_rofental_2020_11_14.tif,,7-day,2020-11-12,selected,,2020-11-14,,True,2,2,1,3281,"{""min_support_coverage_ratio"": 0.1}",1,1,0
+station_hs,2020-11-17,2020-11-16T23:00:00+00:00,,latschbloder|proviantdepot,7-day,2020-11-15,selected,,2020-11-17,,True,2,2,1,2,"{""min_station_count"": 2.0}",5,1,0
+scf,2020-11-19,2020-11-19T10:13:19.024000Z,s2_fsc_snowflake_rofental_2020_11_19.tif,,7-day,2020-11-19,selected,,2020-11-19,,True,0,2,1,1787,"{""min_support_coverage_ratio"": 0.1}",1,1,0
+station_hs,2020-11-22,2020-11-21T23:00:00+00:00,,latschbloder|proviantdepot,7-day,2020-11-22,selected,,2020-11-22,,True,0,2,1,2,"{""min_station_count"": 2.0}",5,4,0
+scf,2020-11-24,2020-11-24T10:13:41.024000Z,s2_fsc_snowflake_rofental_2020_11_24.tif,,7-day,2020-11-26,selected,,2020-11-24,,True,-2,2,1,2380,"{""min_support_coverage_ratio"": 0.1}",1,1,0
+station_hs,2020-11-29,2020-11-28T23:00:00+00:00,,latschbloder|proviantdepot,7-day,2020-11-29,selected,,2020-11-29,,True,0,2,1,2,"{""min_station_count"": 2.0}",5,2,0
+scf,,,,,7-day,2020-12-03,missed,no observations within timing tolerance and active period,,,True,,2,1,,"{""min_support_coverage_ratio"": 0.1}",0,0,0
+station_hs,2020-12-06,2020-12-05T23:00:00+00:00,,latschbloder|proviantdepot,7-day,2020-12-06,selected,,2020-12-06,,True,0,2,1,2,"{""min_station_count"": 2.0}",5,4,0
+scf,2020-12-12,2020-12-12T10:23:29.024000Z,s2_fsc_snowflake_rofental_2020_12_12.tif,,7-day,2020-12-10,selected,,2020-12-12,,True,2,2,1,2377,"{""min_support_coverage_ratio"": 0.1}",1,1,0
+station_hs,2020-12-13,2020-12-12T23:00:00+00:00,,latschbloder|proviantdepot,7-day,2020-12-13,selected,,2020-12-13,,True,0,2,1,2,"{""min_station_count"": 2.0}",5,5,0
+scf,,,,,7-day,2020-12-17,missed,all eligible observations withheld,,,True,,2,1,,"{""min_support_coverage_ratio"": 0.1}",1,1,1
+station_hs,2020-12-20,2020-12-19T23:00:00+00:00,,latschbloder|proviantdepot,7-day,2020-12-20,selected,,2020-12-20,,True,0,2,1,2,"{""min_station_count"": 2.0}",5,5,0
+scf,,,,,7-day,2020-12-24,missed,no observations within timing tolerance and active period,,,True,,2,1,,"{""min_support_coverage_ratio"": 0.1}",0,0,0
+station_hs,2020-12-26,2020-12-25T23:00:00+00:00,,latschbloder|proviantdepot,7-day,2020-12-27,selected,,2020-12-26,,True,-1,2,1,2,"{""min_station_count"": 2.0}",5,4,0
+scf,,,,,7-day,2020-12-31,missed,no observations within timing tolerance and active period,,,True,,2,1,,"{""min_support_coverage_ratio"": 0.1}",0,0,0
+station_hs,2021-01-03,2021-01-02T23:00:00+00:00,,latschbloder|proviantdepot,7-day,2021-01-03,selected,,2021-01-03,,True,0,2,1,2,"{""min_station_count"": 2.0}",5,5,0
+scf,2021-01-08,2021-01-08T10:13:19.024000Z,s2_fsc_snowflake_rofental_2021_01_08.tif,,7-day,2021-01-07,selected,,2021-01-08,,True,1,2,1,2756,"{""min_support_coverage_ratio"": 0.1}",1,1,0
+station_hs,2021-01-10,2021-01-09T23:00:00+00:00,,latschbloder|proviantdepot,7-day,2021-01-10,selected,,2021-01-10,,True,0,2,1,2,"{""min_station_count"": 2.0}",5,5,0
+scf,,,,,7-day,2021-01-14,missed,no observation passed quality screening,,,True,,2,1,,"{""min_support_coverage_ratio"": 0.1}",1,0,0
+station_hs,2021-01-17,2021-01-16T23:00:00+00:00,,latschbloder|proviantdepot,7-day,2021-01-17,selected,,2021-01-17,,True,0,2,1,2,"{""min_station_count"": 2.0}",5,5,0
+scf,,,,,7-day,2021-01-21,missed,no observations within timing tolerance and active period,,,True,,2,1,,"{""min_support_coverage_ratio"": 0.1}",0,0,0
+station_hs,2021-01-24,2021-01-23T23:00:00+00:00,,latschbloder|proviantdepot,7-day,2021-01-24,selected,,2021-01-24,,True,0,2,1,2,"{""min_station_count"": 2.0}",5,5,0
+scf,,,,,7-day,2021-01-28,missed,no observations within timing tolerance and active period,,,True,,2,1,,"{""min_support_coverage_ratio"": 0.1}",0,0,0
+station_hs,2021-01-31,2021-01-30T23:00:00+00:00,,latschbloder|proviantdepot,7-day,2021-01-31,selected,,2021-01-31,,True,0,2,1,2,"{""min_station_count"": 2.0}",5,5,0
+scf,2021-02-05,2021-02-05T10:22:21.024000Z,s2_fsc_snowflake_rofental_2021_02_05.tif,,7-day,2021-02-04,selected,,2021-02-05,,True,1,2,1,5097,"{""min_support_coverage_ratio"": 0.1}",1,1,0
+station_hs,2021-02-07,2021-02-06T23:00:00+00:00,,latschbloder|proviantdepot,7-day,2021-02-07,selected,,2021-02-07,,True,0,2,1,2,"{""min_station_count"": 2.0}",5,5,0
+scf,2021-02-12,2021-02-12T10:11:31.024000Z,s2_fsc_snowflake_rofental_2021_02_12.tif,,7-day,2021-02-11,selected,,2021-02-12,,True,1,2,1,3815,"{""min_support_coverage_ratio"": 0.1}",1,1,0
+station_hs,2021-02-14,2021-02-13T23:00:00+00:00,,latschbloder|proviantdepot,7-day,2021-02-14,selected,,2021-02-14,,True,0,2,1,2,"{""min_station_count"": 2.0}",5,5,0
+wet_snow_line,,,,,7-day,2021-02-15,missed,no observations within timing tolerance and active period,,,True,,2,1,,"{""min_n_wet"": 50.0, ""min_support_coverage_ratio"": 0.1, ""min_wet_bands"": 1.0}",0,0,0
+scf,2021-02-20,2021-02-20T10:19:39.024000Z,s2_fsc_snowflake_rofental_2021_02_20.tif,,7-day,2021-02-18,selected,,2021-02-20,,True,2,2,1,5147,"{""min_support_coverage_ratio"": 0.1}",2,2,0
+station_hs,2021-02-21,2021-02-20T23:00:00+00:00,,latschbloder|proviantdepot,7-day,2021-02-21,selected,,2021-02-21,,True,0,2,1,2,"{""min_station_count"": 2.0}",5,5,0
+wet_snow_line,,,,,7-day,2021-02-22,missed,no observations within timing tolerance and active period,,,True,,2,1,,"{""min_n_wet"": 50.0, ""min_support_coverage_ratio"": 0.1, ""min_wet_bands"": 1.0}",0,0,0
+scf,,,,,7-day,2021-02-25,missed,no observation passed quality screening,,,True,,2,1,,"{""min_support_coverage_ratio"": 0.1}",1,0,0
+station_hs,2021-02-28,2021-02-27T23:00:00+00:00,,latschbloder|proviantdepot,7-day,2021-02-28,selected,,2021-02-28,,True,0,2,1,2,"{""min_station_count"": 2.0}",3,3,0
+wet_snow_line,,,,,7-day,2021-03-01,missed,no observation passed quality screening,,,True,,2,1,,"{""min_n_wet"": 50.0, ""min_support_coverage_ratio"": 0.1, ""min_wet_bands"": 1.0}",1,0,0
+scf,2021-03-02,2021-03-02T10:18:39.025000Z,s2_fsc_snowflake_rofental_2021_03_02.tif,,7-day,2021-03-04,selected,,2021-03-02,,True,-2,2,1,4478,"{""min_support_coverage_ratio"": 0.1}",1,1,0
+wet_snow_line,,,,,7-day,2021-03-08,missed,no observation passed quality screening,,,True,,2,1,,"{""min_n_wet"": 50.0, ""min_support_coverage_ratio"": 0.1, ""min_wet_bands"": 1.0}",2,0,0
+scf,2021-03-09,2021-03-09T10:07:39.024000Z,s2_fsc_snowflake_rofental_2021_03_09.tif,,7-day,2021-03-11,selected,,2021-03-09,,True,-2,2,1,999,"{""min_support_coverage_ratio"": 0.1}",1,1,0
+wet_snow_line,,,,,7-day,2021-03-15,missed,no observation passed quality screening,,,True,,2,1,,"{""min_n_wet"": 50.0, ""min_support_coverage_ratio"": 0.1, ""min_wet_bands"": 1.0}",2,0,0
+scf,2021-03-19,2021-03-19T10:06:49.024000Z,s2_fsc_snowflake_rofental_2021_03_19.tif,,7-day,2021-03-18,selected,,2021-03-19,,True,1,2,1,4637,"{""min_support_coverage_ratio"": 0.1}",1,1,0
+wet_snow_line,,,,,7-day,2021-03-22,missed,no observation passed quality screening,,,True,,2,1,,"{""min_n_wet"": 50.0, ""min_support_coverage_ratio"": 0.1, ""min_wet_bands"": 1.0}",2,0,0
+scf,2021-03-24,2021-03-24T10:10:21.024000Z,s2_fsc_snowflake_rofental_2021_03_24.tif,,7-day,2021-03-25,selected,,2021-03-24,,True,-1,2,1,5195,"{""min_support_coverage_ratio"": 0.1}",1,1,0
+wet_snow_line,,,,,7-day,2021-03-29,missed,no observation passed quality screening,,,True,,2,1,,"{""min_n_wet"": 50.0, ""min_support_coverage_ratio"": 0.1, ""min_wet_bands"": 1.0}",1,0,0
+scf,2021-04-01,2021-04-01T10:15:59.024000Z,s2_fsc_snowflake_rofental_2021_04_01.tif,,7-day,2021-04-01,selected,,2021-04-01,,True,0,2,1,4074,"{""min_support_coverage_ratio"": 0.1}",2,2,0
+wet_snow_line,,,,,7-day,2021-04-05,missed,no observation passed quality screening,,,True,,2,1,,"{""min_n_wet"": 50.0, ""min_support_coverage_ratio"": 0.1, ""min_wet_bands"": 1.0}",1,0,0
+scf,2021-04-08,2021-04-08T10:05:49.024000Z,s2_fsc_snowflake_rofental_2021_04_08.tif,,7-day,2021-04-08,selected,,2021-04-08,,True,0,2,1,4515,"{""min_support_coverage_ratio"": 0.1}",2,1,0
+wet_snow_line,,,,,7-day,2021-04-12,missed,no observation passed quality screening,,,True,,2,1,,"{""min_n_wet"": 50.0, ""min_support_coverage_ratio"": 0.1, ""min_wet_bands"": 1.0}",1,0,0
+scf,,,,,7-day,2021-04-15,missed,all eligible observations withheld,,,True,,2,1,,"{""min_support_coverage_ratio"": 0.1}",1,1,1
+wet_snow_line,2021-04-21,2021-04-21T17:07:12Z,WSM_S1B_SAR_track117_2021_04_21_17_06_32.tif,,7-day,2021-04-19,selected,,2021-04-21,,True,2,2,1,6237,"{""min_n_wet"": 50.0, ""min_support_coverage_ratio"": 0.1, ""min_wet_bands"": 1.0}",2,1,0
+scf,2021-04-23,2021-04-23T10:10:21.024000Z,s2_fsc_snowflake_rofental_2021_04_23.tif,,7-day,2021-04-22,selected,,2021-04-23,,True,1,2,1,4395,"{""min_support_coverage_ratio"": 0.1}",1,1,0
+wet_snow_line,2021-04-27,2021-04-27T17:07:12Z,WSM_S1A_SAR_track117_2021_04_27_17_07_14.tif,,7-day,2021-04-26,selected,,2021-04-27,,True,1,2,1,6237,"{""min_n_wet"": 50.0, ""min_support_coverage_ratio"": 0.1, ""min_wet_bands"": 1.0}",2,1,0
+scf,2021-04-28,2021-04-28T10:05:49.024000Z,s2_fsc_snowflake_rofental_2021_04_28.tif,,7-day,2021-04-29,selected,,2021-04-28,,True,-1,2,1,3104,"{""min_support_coverage_ratio"": 0.1}",1,1,0
+wet_snow_line,2021-05-01,2021-05-01T05:26:24Z,WSM_S1A_SAR_track168_2021_05_01_05_27_27.tif,,7-day,2021-05-03,selected,,2021-05-01,,True,-2,2,1,6297,"{""min_n_wet"": 50.0, ""min_support_coverage_ratio"": 0.1, ""min_wet_bands"": 1.0}",2,2,1
+scf,2021-05-08,2021-05-08T10:05:49.024000Z,s2_fsc_snowflake_rofental_2021_05_08.tif,,7-day,2021-05-06,selected,,2021-05-08,,True,2,2,1,3046,"{""min_support_coverage_ratio"": 0.1}",1,1,0
+wet_snow_line,,,,,7-day,2021-05-10,missed,no observation passed quality screening,,,True,,2,1,,"{""min_n_wet"": 50.0, ""min_support_coverage_ratio"": 0.1, ""min_wet_bands"": 1.0}",1,0,0
+scf,,,,,7-day,2021-05-13,missed,no observations within timing tolerance and active period,,,True,,2,1,,"{""min_support_coverage_ratio"": 0.1}",0,0,0
+wet_snow_line,2021-05-15,2021-05-15T17:07:12Z,WSM_S1B_SAR_track117_2021_05_15_17_06_33.tif,,7-day,2021-05-17,selected,,2021-05-15,,True,-2,2,1,6237,"{""min_n_wet"": 50.0, ""min_support_coverage_ratio"": 0.1, ""min_wet_bands"": 1.0}",2,2,1
+scf,2021-05-18,2021-05-18T10:05:59.024000Z,s2_fsc_snowflake_rofental_2021_05_18.tif,,7-day,2021-05-20,selected,,2021-05-18,,True,-2,2,1,1048,"{""min_support_coverage_ratio"": 0.1}",1,1,0
+wet_snow_line,2021-05-25,2021-05-25T05:26:24Z,WSM_S1A_SAR_track168_2021_05_25_05_27_29.tif,,7-day,2021-05-24,selected,,2021-05-25,,True,1,2,1,6297,"{""min_n_wet"": 50.0, ""min_support_coverage_ratio"": 0.1, ""min_wet_bands"": 1.0}",1,1,0
+scf,2021-05-26,2021-05-26T10:20:21.024000Z,s2_fsc_snowflake_rofental_2021_05_26.tif,,7-day,2021-05-27,selected,,2021-05-26,,True,-1,2,1,3982,"{""min_support_coverage_ratio"": 0.1}",2,2,1
+wet_snow_line,2021-05-31,2021-05-31T05:26:24Z,WSM_S1B_SAR_track168_2021_05_31_05_26_47.tif,,7-day,2021-05-31,selected,,2021-05-31,,True,0,2,1,6297,"{""min_n_wet"": 50.0, ""min_support_coverage_ratio"": 0.1, ""min_wet_bands"": 1.0}",2,1,0
+scf,,,,,7-day,2021-06-03,missed,no observation passed quality screening,,,True,,2,1,,"{""min_support_coverage_ratio"": 0.1}",1,0,0
+wet_snow_line,,,,,7-day,2021-06-07,missed,no observation passed quality screening,,,True,,2,1,,"{""min_n_wet"": 50.0, ""min_support_coverage_ratio"": 0.1, ""min_wet_bands"": 1.0}",1,0,0
+scf,,,,,7-day,2021-06-10,missed,all eligible observations withheld,,,True,,2,1,,"{""min_support_coverage_ratio"": 0.1}",1,1,1
+wet_snow_line,,,,,7-day,2021-06-14,missed,no observation passed quality screening,,,True,,2,1,,"{""min_n_wet"": 50.0, ""min_support_coverage_ratio"": 0.1, ""min_wet_bands"": 1.0}",2,0,0
+scf,2021-06-15,2021-06-15T10:20:21.024000Z,s2_fsc_snowflake_rofental_2021_06_15.tif,,7-day,2021-06-17,selected,,2021-06-15,,True,-2,2,1,2949,"{""min_support_coverage_ratio"": 0.1}",2,2,0
+wet_snow_line,,,,,7-day,2021-06-21,missed,no observation passed quality screening,,,True,,2,1,,"{""min_n_wet"": 50.0, ""min_support_coverage_ratio"": 0.1, ""min_wet_bands"": 1.0}",1,0,0
+scf,2021-06-22,2021-06-22T10:10:31.024000Z,s2_fsc_snowflake_rofental_2021_06_22.tif,,7-day,2021-06-24,selected,,2021-06-22,,True,-2,2,1,1062,"{""min_support_coverage_ratio"": 0.1}",2,1,0
+wet_snow_line,,,,,7-day,2021-06-28,missed,no observation passed quality screening,,,True,,2,1,,"{""min_n_wet"": 50.0, ""min_support_coverage_ratio"": 0.1, ""min_wet_bands"": 1.0}",2,0,0
