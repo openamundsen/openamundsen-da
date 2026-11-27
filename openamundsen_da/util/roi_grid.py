@@ -197,23 +197,11 @@ def _union_geometry(roi_vector_path: Path, target_crs: str | None) -> gpd.GeoDat
     return gpd.GeoDataFrame(attrs, geometry=[geom], crs=gdf.crs)
 
 
-def ensure_setup_roi_grid(
-    setup_dir: Path,
-    *,
-    roi_vector_path: Optional[Path] = None,
-    overwrite: bool = False,
-) -> Path:
-    spec = resolve_setup_grid_spec(setup_dir)
-    roi_grid_path = spec.roi_grid_path
-
-    if roi_grid_path.is_file() and not overwrite:
-        _read_mask_from_grid(roi_grid_path, spec)
-        return roi_grid_path
-
+def _rasterize_setup_roi(spec: SetupGridSpec, roi_vector_path: Optional[Path]) -> np.ndarray:
     source_vector = Path(roi_vector_path) if roi_vector_path is not None else discover_setup_roi_vector(spec.setup_dir)
     if source_vector is None:
         raise FileNotFoundError(
-            f"Missing ROI grid {roi_grid_path} and no ROI vector under {spec.setup_dir / 'env'}."
+            f"Missing ROI grid {spec.roi_grid_path} and no ROI vector under {spec.setup_dir / 'env'}."
         )
     if not source_vector.is_file():
         raise FileNotFoundError(f"ROI vector not found: {source_vector}")
@@ -229,6 +217,31 @@ def ensure_setup_roi_grid(
     if int(np.count_nonzero(mask)) == 0:
         raise ValueError(f"Generated ROI grid would be empty from {source_vector}")
 
+    return mask
+
+
+def read_setup_roi(setup_dir: Path) -> tuple[np.ndarray, SetupGridSpec]:
+    """Read the setup grid or rasterize its vector in memory without modifying inputs."""
+    spec = resolve_setup_grid_spec(setup_dir)
+    if spec.roi_grid_path.is_file():
+        return _read_mask_from_grid(spec.roi_grid_path, spec), spec
+    return _rasterize_setup_roi(spec, None), spec
+
+
+def ensure_setup_roi_grid(
+    setup_dir: Path,
+    *,
+    roi_vector_path: Optional[Path] = None,
+    overwrite: bool = False,
+) -> Path:
+    spec = resolve_setup_grid_spec(setup_dir)
+    roi_grid_path = spec.roi_grid_path
+
+    if roi_grid_path.is_file() and not overwrite:
+        _read_mask_from_grid(roi_grid_path, spec)
+        return roi_grid_path
+
+    mask = _rasterize_setup_roi(spec, roi_vector_path)
     _write_mask_grid(mask, roi_grid_path, transform=spec.transform, crs=spec.crs)
     _read_mask_from_grid(roi_grid_path, spec)
     return roi_grid_path

@@ -21,7 +21,7 @@ from openamundsen_da.util.observation_raster import (
     netcdf_band_index_for_token,
     open_netcdf_variable_raster,
 )
-from openamundsen_da.util.roi_grid import load_setup_roi_mask
+from openamundsen_da.util.roi_grid import load_setup_roi_mask, read_setup_roi
 
 _GEOTIFF_SUFFIXES = {".tif", ".tiff"}
 _NETCDF_SUFFIXES = {".nc", ".nc4", ".netcdf"}
@@ -232,8 +232,12 @@ def _eligible_model_mask(
     *,
     setup_dir: Path,
     landcover_cfg: LandcoverMaskConfig | None,
+    read_only: bool = False,
 ) -> tuple[np.ndarray, object]:
-    roi_mask, spec, _ = load_setup_roi_mask(setup_dir, ensure_grid=True)
+    if read_only:
+        roi_mask, spec = read_setup_roi(setup_dir)
+    else:
+        roi_mask, spec, _ = load_setup_roi_mask(setup_dir, ensure_grid=True)
     arr = np.ma.array(np.ones(roi_mask.shape, dtype=float), mask=~roi_mask, copy=False)
     if landcover_cfg is not None and landcover_cfg.enabled:
         target_crs = CRS.from_user_input(spec.crs) if spec.crs is not None else None
@@ -262,11 +266,23 @@ def load_observation_support_mask(
     if df.empty:
         raise ValueError(f"Observation CSV has no rows: {obs_csv}")
     row = df.iloc[0]
-    tokens = _split_source_tokens(row.get("source"))
-    if not tokens:
-        raise ValueError(f"Observation CSV missing source token(s): {obs_csv}")
+    return observation_source_support(
+        setup_dir=setup_dir, project_dir=project_dir, source=row.get("source"),
+        observable=observable, landcover_cfg=landcover_cfg,
+    )
 
-    eligible_mask, spec = _eligible_model_mask(setup_dir=setup_dir, landcover_cfg=landcover_cfg)
+
+def observation_source_support(
+    *, setup_dir: Path, project_dir: Path, source: object, observable: str,
+    landcover_cfg: LandcoverMaskConfig | None, read_only: bool = False,
+) -> ObservationSupportMask:
+    """Measure observed support on the same eligible grid used by the likelihood."""
+    tokens = _split_source_tokens(source)
+    if not tokens:
+        raise ValueError("Observation CSV missing source token(s)")
+    eligible_mask, spec = _eligible_model_mask(
+        setup_dir=setup_dir, landcover_cfg=landcover_cfg, read_only=read_only,
+    )
     support_mask = np.zeros(eligible_mask.shape, dtype=bool)
     obs_dir = _observation_dir(project_dir, observable=observable, setup_dir=setup_dir)
     fallback_dir = _fallback_observation_dir_for_project(project_dir, observable=observable)
