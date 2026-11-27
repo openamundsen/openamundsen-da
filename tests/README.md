@@ -60,10 +60,7 @@ Workflow file: `.github/workflows/ci.yml`
   - Never updates `latest`; only a stable release does that
 
 Workflow file `.github/workflows/deploy-docs.yml` validates and builds the
-documentation before deploying it to GitHub Pages. The separate
-`.github/workflows/deploy-cloudflare.yml` workflow has no push trigger. It can
-only update the protected Cloudflare Pages fallback through an intentional
-manual dispatch.
+documentation before deploying it to GitHub Pages.
 
 Workflow file `.github/workflows/release.yml` runs for exact stable and RC tags.
 It repeats the portable matrix plus both Docker and native pip Lenovo P8
@@ -79,9 +76,6 @@ then publishes the multi-architecture release image and GitHub prerelease/releas
   `latest` dependency canary and the full native Rofental validator pass.
 - Keep the `testpypi` and approval-gated `pypi` GitHub environments and their
   corresponding Trusted Publisher registrations valid.
-- After a verified release or documentation cutover, manually dispatch the
-  Cloudflare workflow from the same release tag or reviewed commit. Never use
-  it as an automatic parallel deployment.
 - Tune integration validation rules if expected output/warnings change.
 
 ## Current Test Stack
