@@ -409,11 +409,14 @@ the difference is explained and explicitly approved.
 
 ### Exact manuscript setup
 
-The manuscript figures and reported statistics use the same configuration and
-scientific inputs as the shipped Rofental example. Materialize a clean
-reproduction setup with:
+The published figures, ESS values and benchmark scores refer to the Rofental
+inputs shipped in v0.9.4, including the controlled 40% precipitation reduction.
+Use that release to reproduce them. The four-winter example uses the original
+precipitation and requires its own results. From a clone with the release tag:
 
 ```bash
+git worktree add --detach ../openamundsen-da-v0.9.4 v0.9.4
+cd ../openamundsen-da-v0.9.4
 python scripts/release/materialize_manuscript_setup.py \
   /path/to/rofental_manuscript_es30
 ```

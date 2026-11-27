@@ -30,6 +30,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   keeping scientific manifests, weights, logs and compact consumers durable.
 
 ### Changed
+- Extend the Rofental station forcing to 2019/20–2022/23 and remove the
+  demonstration's 40% precipitation reduction. Runs using the new example
+  will produce different snow simulations and may yield different benchmark
+  scores. The original example and its inputs are available in v0.9.4.
 - Derive live project-size telemetry from storage-ledger materialized/removed
   byte counters after one baseline scan, downsample growing PNG histories,
   break curves across monitor gaps and retain a companion workflow-phase

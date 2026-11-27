@@ -19,6 +19,13 @@ wet-snow products, station observations and one Rofental 2022–2023 project.
 Static inputs are available at 100, 250 and 500 m; the setup YAML selects the
 active resolution.
 
+The current example supplies hourly meteorological forcing for 2019/20 through
+2022/23. The configured project still runs 2022/23. It now uses the original
+station precipitation, reversing the 40% reduction in the v0.9.4 demonstration.
+Expect different numerical results, including benchmark scores. Use v0.9.4 to
+reproduce the earlier results and tutorial reference images.
+[Forcing sources and corrections](https://github.com/openamundsen/openamundsen-da/blob/main/examples/README.md#meteo)
+
 Copy it from the image before use:
 
 ```bash

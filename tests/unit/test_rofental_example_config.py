@@ -1,6 +1,7 @@
 import csv
 from pathlib import Path
 
+import pandas as pd
 import yaml
 
 
@@ -118,3 +119,46 @@ def test_shipped_rofental_wet_snow_summary_uses_uppermost_crossing() -> None:
     may_3 = next(row for row in rows if row["date"] == "2023-05-03")
     assert may_3["acquisition_time"] == "2023-05-03T05:26:24Z"
     assert float(may_3["wet_snow_line"]) == 3066.718769538577
+
+
+def test_rofental_hourly_forcing_covers_four_winters() -> None:
+    meteo = REPO_ROOT / "examples" / "rofental" / "meteo"
+    starts = {
+        "bellavista": "2019-10-01",
+        "latschbloder": "2019-10-01",
+        "proviantdepot": "2019-10-03 02:00",
+    }
+    stations = {}
+    for station_id, start in starts.items():
+        frame = pd.read_csv(meteo / f"{station_id}.csv", index_col="date", parse_dates=True)
+        assert frame.index.equals(pd.date_range(start, "2023-09-30 23:00", freq="h"))
+        stations[station_id] = frame
+
+    # A model step needs three hourly increments at the same station.
+    available = []
+    for frame in stations.values():
+        bins = frame.resample("3h", closed="right", label="right")
+        means = bins.mean()
+        means["precip"] = bins["precip"].sum(min_count=3)
+        available.append(means.notna())
+    coverage = pd.concat(available).groupby(level=0).any()
+    variables = ["temp", "precip", "sw_in", "rel_hum", "wind_speed"]
+    for year in range(2019, 2023):
+        start = "2019-10-04" if year == 2019 else f"{year}-10-01"
+        steps = pd.date_range(start, f"{year + 1}-06-30 21:00", freq="3h")
+        assert coverage.loc[steps, variables].all().all()
+
+    bella_precip = stations["bellavista"]["precip"]
+    assert bella_precip.loc["2020-12-07 13:00":"2020-12-07 18:00"].tolist() == [
+        0.2, 0.4, 0.1, 0.5, 0.4, 0.1,
+    ]
+    for station_id in ("latschbloder", "proviantdepot"):
+        for midnight in ("2022-01-01 00:00", "2023-01-01 00:00"):
+            assert stations[station_id].at[pd.Timestamp(midnight), "precip"] == 0.0
+
+    # Totals over available hourly readings in the shipped 2022/23 project.
+    totals_mm = {
+        station_id: round(frame.loc["2022-10-01":"2023-06-30", "precip"].sum(), 2)
+        for station_id, frame in stations.items()
+    }
+    assert totals_mm == {"bellavista": 492.30, "latschbloder": 493.60, "proviantdepot": 499.51}
