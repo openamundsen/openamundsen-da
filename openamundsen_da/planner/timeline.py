@@ -48,8 +48,10 @@ def plot_timeline(
     plot_timelines([TimelinePanel("", schedules, holdouts)], output, title=title)
 
 
-def plot_timelines(panels: list[TimelinePanel], output: Path, *, title: str | None = None) -> None:
-    """Stack planning periods in input order with a shared variable key and count caption."""
+def plot_timelines(
+    panels: list[TimelinePanel], output: Path, *, title: str | None = None, columns: int = 1
+) -> None:
+    """Arrange planning periods in row-major order with a shared variable key and count caption."""
     import matplotlib.pyplot as plt
     from matplotlib.lines import Line2D
 
@@ -68,6 +70,8 @@ def plot_timelines(panels: list[TimelinePanel], output: Path, *, title: str | No
         raise ValueError("supply at least one timeline panel")
     if Path(output).suffix.lower() != ".png":
         raise ValueError("timeline output must have a .png extension")
+    if columns < 1 or columns > len(panels):
+        raise ValueError("columns must be between one and the number of panels")
     data = [_panel_data(panel) for panel in panels]
     variables = sorted({var for groups, _ in data for _, var, _ in groups})
     colors = {}
@@ -78,19 +82,29 @@ def plot_timelines(panels: list[TimelinePanel], output: Path, *, title: str | No
         colors[variable] = style["line"] if style else f"C{i % 10}"
 
     combined = len(panels) > 1
-    heights = [max(FIGHEIGHT_OVERVIEW_ROW, 0.48 * len(labels)) for _, labels in data]
+    compact = columns > 1
+    row_scale = 0.32 if compact else 0.48
+    heights = [
+        max(FIGHEIGHT_OVERVIEW_ROW, row_scale * max(len(labels) for _, labels in data[i:i + columns]))
+        for i in range(0, len(data), columns)
+    ]
+    height = sum(heights) + (0.65 if compact else 1.35)
     with plt.rc_context():
         set_matplotlib_text_black(plt.matplotlib)
         fig, axes = plt.subplots(
-            len(panels), 1, squeeze=False, height_ratios=heights,
-            figsize=(FIGWIDTH_OVERVIEW_PAPER, 1.35 + sum(heights)), layout="constrained",
+            len(heights), columns, squeeze=False, height_ratios=heights,
+            figsize=(FIGWIDTH_OVERVIEW_PAPER, height), layout="constrained",
         )
         try:
-            for index, (ax, panel, (groups, labels)) in enumerate(zip(axes.flat, panels, data, strict=True)):
+            for unused in axes.flat[len(panels):]:
+                fig.delaxes(unused)
+            for index, (panel, (groups, labels)) in enumerate(zip(panels, data, strict=True)):
+                ax = axes.flat[index]
                 for (i, variable, actual), dates in groups.items():
                     ax.scatter(
                         dates, [i + offsets[variable]] * len(dates), color=colors[variable],
-                        marker="o" if actual else "x", s=19, linewidths=1.1, zorder=3, clip_on=False,
+                        marker="o" if actual else "x", s=8 if compact else 19,
+                        linewidths=0.8 if compact else 1.1, zorder=3, clip_on=False,
                     )
                 ax.set_yticks(range(len(labels)), labels)
                 ax.set_ylim(len(labels) - 0.5, -0.5)
@@ -102,18 +116,19 @@ def plot_timelines(panels: list[TimelinePanel], output: Path, *, title: str | No
                     next_month = last.replace(day=calendar.monthrange(last.year, last.month)[1]) + timedelta(days=1)
                     bounds = (first.replace(day=1), next_month)
                 if bounds:
-                    apply_month_interval_axis_labels(ax, bounds, include_year_on_first=not combined)
+                    apply_month_interval_axis_labels(
+                        ax, bounds, include_year_on_first=not combined, labelsize=7 if compact else 8.4
+                    )
                 else:
                     ax.set_xticks([])
-                ax.tick_params(axis="y", length=0, labelsize=8)
+                ax.tick_params(axis="y", length=0, labelsize=7 if compact else 8)
                 if combined:
                     letter = ascii_lowercase[index] if index < len(ascii_lowercase) else str(index + 1)
-                    ax.set_title(f"({letter}) {panel.name}", loc="left", fontsize=10)
+                    ax.set_title(f"({letter}) {panel.name}", loc="left", fontsize=9 if compact else 10)
 
-            axes[-1, 0].set_xlabel(
-                "Parentheses give the number of scheduled updates or withheld observations. Crosses mark missed targets.",
-                loc="left", fontsize=7,
-            )
+            caption = "Parentheses give the number of scheduled updates or withheld observations. Crosses mark missed targets."
+            if not compact:
+                axes[-1, 0].set_xlabel(caption, loc="left", fontsize=7)
             handles = [
                 Line2D([], [], linestyle="", marker="o", color=colors[var], markersize=5,
                        label=variable_label(var) if var in VARIABLE_STYLES else var.replace("_", " "))
@@ -124,9 +139,12 @@ def plot_timelines(panels: list[TimelinePanel], output: Path, *, title: str | No
             if handles:
                 options = dict(handles=handles, ncol=min(len(handles), 4), frameon=False, fontsize=8)
                 if combined:
-                    fig.legend(loc="outside lower center", **options)
+                    fig.legend(loc="outside lower center", title=caption if compact else None,
+                               title_fontsize=7, **options)
                 else:
                     axes[0, 0].legend(loc="lower center", bbox_to_anchor=(0.5, 1.01), **options)
+            elif compact:
+                fig.supxlabel(caption, fontsize=7)
             fig.suptitle(title or "Assimilation schedules and withheld observations", fontsize=11)
             Path(output).parent.mkdir(parents=True, exist_ok=True)
             save_figure_png(fig, output)

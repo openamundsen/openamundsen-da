@@ -24,7 +24,7 @@ def render(root: Path) -> None:
         )
         panels.append(panel)
         plot_timelines([panel], directory / "timeline.png", title=f"{title}, {winter}")
-    plot_timelines(panels, root / "timeline.png", title=title)
+    plot_timelines(panels, root / "timeline.png", title=title, columns=2)
 
 
 if __name__ == "__main__":

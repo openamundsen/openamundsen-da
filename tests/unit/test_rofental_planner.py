@@ -56,15 +56,18 @@ def test_four_panel_timeline_matches_reviewed_winter_plots(monkeypatch):
             single_rows[output.parent.name] = [label.get_text() for label in axis.get_yticklabels()]
             return
         assert output == PLANNER / "timeline.png"
-        assert 7.3 < fig.get_figheight() < 11.69
+        assert fig.get_figheight() < 4.5
         assert len(fig.legends) == 1
         for year, axis in enumerate(fig.axes, 2019):
+            spec = axis.get_subplotspec()
+            assert spec.get_geometry()[:2] == (2, 2)
+            assert (spec.rowspan.start, spec.colspan.start) == divmod(year - 2019, 2)
             combined_titles.append(axis.get_title(loc="left"))
             assert [num2date(value).date() for value in axis.get_xlim()] == [
                 date(year, 10, 1), date(year + 1, 7, 1)
             ]
             assert [label.get_text() for label in axis.get_yticklabels()] == single_rows[f"{year}_{year + 1}"]
-        assert sum(bool(axis.get_xlabel()) for axis in fig.axes) == 1
+        assert "Parentheses" in fig.legends[0].get_title().get_text()
 
     monkeypatch.setattr(common, "save_figure_png", inspect)
     runpy.run_path(str(PLANNER / "plot_timelines.py"))["render"](PLANNER)
