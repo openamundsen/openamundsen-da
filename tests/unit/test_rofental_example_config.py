@@ -173,6 +173,10 @@ def test_rofental_station_depth_and_swe_coverage() -> None:
         obs = pd.read_csv(station_dir / f"{station}.csv", index_col="time", parse_dates=True)
         assert obs.index.equals(hours)
         assert round(obs.at[pd.Timestamp("2021-01-15"), "snow_depth"], 6) == expected_depth
+        if station == "latschbloder":
+            assert obs.at[pd.Timestamp("2020-12-07 06:00"), "snow_depth"] == 0.15775
+        else:
+            assert pd.isna(obs.at[pd.Timestamp("2020-12-27 00:00"), "snow_depth"])
         assert obs.loc[:"2022-09-30", "swe"].isna().all()
         if station == "proviantdepot":
             assert obs["swe"].count() == 8708
