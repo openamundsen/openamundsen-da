@@ -42,6 +42,7 @@ from openamundsen_da.observer.satellite_wet_snow_s1 import (
 from openamundsen_da.pipeline.cleanup import clean_project_artifacts
 from openamundsen_da.pipeline.project_skeleton import create_project_skeleton
 from openamundsen_da.pipeline.rendering import render_required_project_outputs
+from openamundsen_da.planner.validation import reviewed_schedule
 from openamundsen_da.results import CleanupResult, PreparationResult, RenderResult, RunResult, WorkflowStatus
 from openamundsen_da.util.perf_monitor import PerfMonitorConfig, capture_perf_snapshot
 from openamundsen_da.util.retention import validate_retained_consumers
@@ -56,7 +57,7 @@ def _setup_path(config: ProjectConfiguration, raw: object) -> Path:
 
 
 def _preparation_inputs(config: ProjectConfiguration) -> tuple[list[dict], str]:
-    files = [config.setup_yaml, config.project_yaml]
+    files = [config.setup_yaml, config.project_yaml, *config.planner_inputs]
     obs = config.project.get("obs")
     if isinstance(obs, dict):
         for section_name, section in obs.items():
@@ -170,6 +171,8 @@ def prepare_project(project_dir: str | Path, *, overwrite: bool = False) -> Prep
         "input_digest": digest,
         "inputs": inventory,
     }
+    if reviewed_schedule(config.project["data_assimilation"]):
+        manifest["reviewed_events"] = config.project["data_assimilation"]["assimilation_events"]
     write_manifest_atomic(manifest_path, manifest)
     try:
         if overwrite and (config.project_dir / "steps").is_dir():
@@ -410,6 +413,14 @@ def run_project(project_dir: str | Path, *, max_workers: int | None = None) -> R
     if preparation is None or preparation.get("status") != "success":
         raise ProjectRunError(f"A completed preparation manifest is required: {preparation_path}")
 
+    da = config.project["data_assimilation"]
+    if "reviewed_events" in preparation or reviewed_schedule(da):
+        _, current_digest = _preparation_inputs(config)
+        if (preparation.get("input_digest") != current_digest
+                or preparation.get("reviewed_events") != da["assimilation_events"]):
+            raise ProjectRunError(
+                "Reviewed schedule or preparation inputs changed; prepare the project again with overwrite enabled"
+            )
     inputs, digest = _run_input_inventory(config, preparation)
     manifest_path = project_run_manifest_path(config.project_dir)
     existing = load_manifest(manifest_path)

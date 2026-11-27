@@ -262,7 +262,7 @@ data_assimilation:
 ```
 
 Notes:
-- `assimilation_events` defines which dates and variables are assimilated.
+- `assimilation_events` defines which dates and variables are assimilated. Use an inline event list or a project-relative path to a reviewed YAML or CSV schedule. See the [Observation Planner guide]({{ site.baseurl }}{% link guides/observation-planner.md %}).
 - `observation_time` is an optional full timezone-aware ISO-8601 selector.
   Date-only selection is valid when exactly one scene exists. Several scenes on
   one date require `observation_time`; the first row is never selected implicitly.

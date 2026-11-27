@@ -263,6 +263,16 @@ class AssimilateStationTests(unittest.TestCase):
             self.assertEqual(len(result.diagnostics), 6)
             self.assertIn("uncertainty_source", result.diagnostics.columns)
             self.assertIn("sigma_abs_floor", result.diagnostics.columns)
+            reviewed = assimilate_station_hs_for_date(
+                setup_dir=setup_dir, step_dir=step_dir, ensemble="prior",
+                date=datetime(2024, 1, 3), station_ids=("station_a",),
+            )
+            self.assertEqual(set(reviewed.diagnostics["station_id"]), {"station_a"})
+            with self.assertRaisesRegex(ValueError, "Reviewed station IDs unavailable"):
+                assimilate_station_hs_for_date(
+                    setup_dir=setup_dir, step_dir=step_dir, ensemble="prior",
+                    date=datetime(2024, 1, 3), station_ids=("station_a", "missing"),
+                )
             station_c = result.diagnostics[result.diagnostics["station_id"] == "station_c"]
             self.assertTrue((station_c["uncertainty_source"] == "default").all())
             self.assertTrue((pd.to_numeric(station_c["sigma_abs_floor"], errors="coerce") == 0.08).all())
