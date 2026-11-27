@@ -210,7 +210,7 @@ jobs:
   trusted-integration:
     name: Release candidate rehearsal on Lenovo P8
     needs: [package, portable, stage-container]
-    runs-on: [self-hosted, linux, x64, oa-da]
+    runs-on: [self-hosted, linux, x64, oa-da, oa-da-trusted]
     permissions:
       contents: read
       packages: read
@@ -294,7 +294,7 @@ jobs:
   native-integration:
     name: Native pip release rehearsal on Lenovo P8
     needs: [package, portable]
-    runs-on: [self-hosted, linux, x64, oa-da]
+    runs-on: [self-hosted, linux, x64, oa-da-native]
     permissions:
       contents: read
     steps:
