@@ -448,11 +448,11 @@ def validate_schedule(project_dir, *, schedule=None, inventory=None, rules=None,
                     if key in assigned:
                         report.errors.append(f"{label} target_date: already assigned on row {assigned[key]}")
                     assigned[key] = i
-            if row.get("target_date") and not start <= _day(row["target_date"]) <= end:
-                report.errors.append(f"{label} target_date: outside project period {start} through {end}")
             if not row["date"]:
                 report.warnings.append(f"{label} date: missed target {row['target_date']}")
                 continue
+            if row.get("target_date") and not start <= _day(row["target_date"]) <= end:
+                report.errors.append(f"{label} target_date: outside project period {start} through {end}")
             day = _day(row["date"])
             if not start <= day <= end:
                 report.errors.append(f"{label} date: outside project period {start} through {end}")

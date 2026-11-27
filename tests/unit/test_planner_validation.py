@@ -123,6 +123,20 @@ def test_invalid_or_empty_manual_rows_identify_the_field_and_target(project):
         assert any(expected in error for error in report.errors)
 
 
+def test_missed_target_before_project_start_does_not_schedule_an_update(project):
+    rule = _scf_rule()
+    rule["period_start"] = "2022-09-30"
+    rows = [{"variable": "scf", "date": "", "target_date": "2022-09-30"}]
+    report = validate_schedule(project, schedule=rows, rules=[rule], schedule_name="monthly")
+    assert not report.errors
+    assert not report.events
+    assert any("missed target 2022-09-30" in warning for warning in report.warnings)
+
+    rows[0]["date"] = "2022-09-30"
+    report = validate_schedule(project, schedule=rows, rules=[rule], schedule_name="monthly")
+    assert any("date: outside project period" in error for error in report.errors)
+
+
 def test_validation_uses_the_runtime_propagation_window(project):
     row = dict(variable="scf", date="2023-06-30")
     report = validate_schedule(project, schedule=[row])
