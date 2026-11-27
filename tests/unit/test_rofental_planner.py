@@ -35,3 +35,37 @@ def test_reviewed_winter_is_reproducible(tmp_path, year, reserved, expected):
         updates = [row for row in rows if row["date"]]
         assert len(updates) == count
         assert not any(matches_holdout(row, excluded) for row in updates for excluded in held)
+
+
+def test_four_panel_timeline_matches_reviewed_winter_plots(monkeypatch):
+    import runpy
+    from datetime import date
+
+    from matplotlib.dates import num2date
+
+    from openamundsen_da.methods.viz import common
+    from openamundsen_da.methods.viz.theme import FIGWIDTH_OVERVIEW_PAPER
+
+    single_rows = {}
+    combined_titles = []
+
+    def inspect(fig, output):
+        assert fig.get_figwidth() == pytest.approx(FIGWIDTH_OVERVIEW_PAPER)
+        if output.parent != PLANNER:
+            axis, = fig.axes
+            single_rows[output.parent.name] = [label.get_text() for label in axis.get_yticklabels()]
+            return
+        assert output == PLANNER / "timeline.png"
+        assert 7.3 < fig.get_figheight() < 11.69
+        assert len(fig.legends) == 1
+        for year, axis in enumerate(fig.axes, 2019):
+            combined_titles.append(axis.get_title(loc="left"))
+            assert [num2date(value).date() for value in axis.get_xlim()] == [
+                date(year, 10, 1), date(year + 1, 7, 1)
+            ]
+            assert [label.get_text() for label in axis.get_yticklabels()] == single_rows[f"{year}_{year + 1}"]
+        assert sum(bool(axis.get_xlabel()) for axis in fig.axes) == 1
+
+    monkeypatch.setattr(common, "save_figure_png", inspect)
+    runpy.run_path(str(PLANNER / "plot_timelines.py"))["render"](PLANNER)
+    assert combined_titles == ["(a) 2019/20", "(b) 2020/21", "(c) 2021/22", "(d) 2022/23"]

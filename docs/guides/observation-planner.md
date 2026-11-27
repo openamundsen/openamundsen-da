@@ -74,7 +74,7 @@ qualify, inspect the achieved count in the companion `_summary` table and the
 reasons in `_exclusions`. A station reservation can identify individual
 stations. Other available stations can still contribute if the minimum is met.
 
-Parentheses give the number of scheduled updates or withheld observations. Crosses mark missed targets.
+Parentheses give the number of scheduled updates or withheld observations. Crosses mark missed targets. The [four-winter Rofental example](../../examples/rofental/planner/README.md) also renders all winters together with a common legend and aligned October–June panels.
 
 Review the actual and missed targets, variable assignments and common evaluation
 observations. Edit the schedule file directly if needed. Generation protects an

@@ -2,6 +2,8 @@
 
 The four winters share one YAML rules file. Start with the [2022/23 monthly schedule](2022_2023/monthly.yml) and its [withheld observations](2022_2023/withheld.yml). Each winter directory contains its observation inventory, one list of observations withheld from all three schedules, and the monthly, 14-day and 7-day schedules. Each schedule has one row per target, including the reason when a target was missed. The summary tables report requested and achieved counts and spacing. The exclusion tables identify individual acquisitions or station dates that failed a rule. [Selection rules](rules.yml) · [Counts by winter, schedule and variable](schedule_counts.yml)
 
+The [four-winter timeline](timeline.png) compares the schedules on the same October–June axis. The figure uses the framework’s 185 mm publication width and fits a portrait A4 page.
+
 | Winter and timeline | Monthly updates | 14-day updates | 7-day updates | Withheld optical / radar |
 | --- | ---: | ---: | ---: | ---: |
 | [2019/20](2019_2020/timeline.png) | 14 | 23 | 43 | 4 / 2 |
@@ -40,11 +42,8 @@ for year in 2019 2020 2021 2022; do
       --schedule "$cadence" --output "$dest/$cadence.yml"
     cmp "$winter/$cadence.yml" "$dest/$cadence.yml"
   done
-  openamundsen-da planner plot --schedule "$dest/monthly.yml" \
-    --schedule "$dest/14-day.yml" --schedule "$dest/7-day.yml" \
-    --withheld "$dest/withheld.yml" --title "Rofental $year/${next:2}" \
-    --output "$dest/timeline.png"
 done
+python plot_timelines.py "$out"
 ```
 
 The shipped Rofental setup includes the source files for 2022/23. Run its read-only validation against all three schedules after editing any schedule or its shared evaluation list.
