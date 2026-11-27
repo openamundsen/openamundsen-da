@@ -422,24 +422,27 @@ def prepare_project_obs_from_summary(
             obs_dt = match.model_time
             row["observation_time"] = observation_time.isoformat().replace("+00:00", "Z")
             row["model_time_offset_seconds"] = match.offset_seconds
+        # The likelihood opens observations by scheduled date. Its model lookup
+        # uses matched_model_time, which can fall on an adjacent local date.
+        event_dt = datetime.combine(ev.date, obs_dt.time())
         row["matched_model_time"] = obs_dt.isoformat()
         row["time_source"] = time_source
         row["time_quality"] = time_quality
         out_csv = build_obs_csv_path(
             step_dir=step,
             variable=variable,
-            date=obs_dt,
+            date=event_dt,
             product=prod_tag,
             include_product_tag=include_product_tag,
         )
         if out_csv.exists() and not overwrite:
-            logger.info("Skipping existing obs CSV for {} (step {})", obs_dt.strftime("%Y-%m-%d"), step.name)
+            logger.info("Skipping existing obs CSV for {} (step {})", event_dt.strftime("%Y-%m-%d"), step.name)
             skipped_existing += 1
             continue
 
         write_obs_from_summary_row(
             step_dir=step,
-            date=obs_dt,
+            date=event_dt,
             row=row,
             value_col=value_col,
             product=prod_tag,

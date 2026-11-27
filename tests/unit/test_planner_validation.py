@@ -182,3 +182,24 @@ def test_unknown_acquisition_time_is_preserved_on_a_daily_clock(project):
     assert "observation_time" not in observation
     assert "acquisition_time" not in observation
     assert observation["matched_model_time"].startswith("2022-10-03T00:00:00")
+
+
+def test_scheduled_date_locates_obs_when_matched_model_time_is_on_previous_day(project):
+    setup = project.parent.parent
+    summary = setup / "obs/summaries" / project.name / "scf_summary.csv"
+    rows = read_rows(summary)
+    rows[0]["acquisition_time"] = "2022-10-03T01:00:00Z"
+    write_rows(summary, rows, overwrite=True)
+    _project_table(project, [{"variable": "scf", "date": rows[0]["date"]}])
+    clock = setup / "rofental.yml"
+    yaml = YAML()
+    config = yaml.load(clock)
+    config["timezone"] = -7
+    with clock.open("w") as stream:
+        yaml.dump(config, stream)
+    result = prepare_project(project)
+    path, = result.observation_paths
+    observation, = read_rows(path)
+    assert "20221003" in path.name
+    assert observation["date"] == "2022-10-03"
+    assert observation["matched_model_time"] == "2022-10-02T18:00:00"
