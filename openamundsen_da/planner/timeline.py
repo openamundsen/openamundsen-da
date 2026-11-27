@@ -33,25 +33,30 @@ def plot_timeline(
         raise ValueError("timeline output must have a .png extension")
     groups = defaultdict(list)
     variables = set()
-    labels = list(schedules)
-    for i, rows in enumerate([*schedules.values(), holdouts]):
+    labels = []
+    for i, (name, rows) in enumerate([*schedules.items(), ("Withheld", holdouts)]):
+        is_withheld = i == len(schedules)
+        count = 0
         for number, row in enumerate(rows, 1):
             variable = str(row.get("variable") or "").strip()
             actual = row.get("date")
             day = actual or row.get("target_date")
-            if not day or not variable or (i == len(labels) and not actual):
+            if not day or not variable or (is_withheld and not actual):
                 raise ValueError(
-                    f"timeline row {number} in {(labels + ['Withheld'])[i]} requires a date and variable"
+                    f"timeline row {number} in {name} requires a date and variable"
                 )
+            if actual:
+                count += 1
             variables.add(variable)
             groups[(i, variable, bool(actual))].append(date.fromisoformat(str(day)))
+        unit = "observation" if is_withheld else "scheduled update"
+        labels.append(f"{name}\n{count} {unit}{'' if count == 1 else 's'}")
     colors = {}
     offsets = {}
     for i, variable in enumerate(sorted(variables)):
         offsets[variable] = 0.0 if len(variables) == 1 else 0.42 * (i / (len(variables) - 1) - 0.5)
         style = DA_VARIABLE_STYLES.get(canonical_da_variable(variable))
         colors[variable] = style["line"] if style else f"C{i % 10}"
-    labels.append("Withheld")
     height = 1.35 + len(labels) * 0.48
     with plt.rc_context():
         set_matplotlib_text_black(plt.matplotlib)

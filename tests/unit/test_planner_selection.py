@@ -293,7 +293,7 @@ def test_csv_yaml_round_trip_through_cli_and_editable_plot(tmp_path, monkeypatch
     assert main(args) == 0
     assert plot.read_bytes().startswith(b"\x89PNG")
     labels, points, _ = rendered[-1]
-    assert labels == ["Monthly", "Withheld"]
+    assert labels == ["Monthly\n1 scheduled update", "Withheld\n1 observation"]
     assert [p[0] for p in points] == [
         [date2num(date(2020, 1, 1)), 0],
         [date2num(date(2020, 1, 8)), 0],
@@ -301,7 +301,8 @@ def test_csv_yaml_round_trip_through_cli_and_editable_plot(tmp_path, monkeypatch
     ]
     write_rows(schedule, [{"variable": "scf", "date": "2020-02-20"}], overwrite=True)
     assert main(["planner", "plot", "--schedule", str(schedule), "--output", str(plot)]) == 0
-    _, points, bounds = rendered[-1]
+    labels, points, bounds = rendered[-1]
+    assert labels == [f"{schedule.stem}\n1 scheduled update", "Withheld\n0 observations"]
     assert points == [[[date2num(date(2020, 2, 20)), 0]]]
     assert bounds[1] - bounds[0] == 29
 

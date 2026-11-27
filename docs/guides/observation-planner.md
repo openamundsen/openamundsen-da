@@ -74,6 +74,8 @@ qualify, inspect the achieved count in the companion `_summary` table and the
 reasons in `_exclusions`. A station reservation can identify individual
 stations. Other available stations can still contribute if the minimum is met.
 
+The count below each schedule name includes rows with an assigned update date. Crosses mark missed targets. The Withheld row counts observations reserved for evaluation.
+
 Review the actual and missed targets, variable assignments and common evaluation
 observations. Edit the schedule file directly if needed. Generation protects an
 existing schedule until you explicitly request replacement with `--overwrite`.
