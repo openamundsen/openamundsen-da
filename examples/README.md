@@ -30,7 +30,32 @@ examples/rofental/
 
 ### `meteo/`
 - `stations.csv`: station metadata.
-- `*.csv`: station forcing time series.
+- The three station CSVs contain hourly forcing for the four hydrological years
+  2019/20 through 2022/23, on a fixed UTC+1 clock. The series begin on
+  1 October 2019 (3 October at 02:00 for Proviantdepot) and end on
+  30 September 2023 at 23:00. Empty fields represent missing observations.
+  The example project still selects October 2022 through June 2023.
+- Precipitation uses the original station forcing. This removes the deliberate
+  40% precipitation reduction used in the v0.9.4 demonstration. The change
+  affects the open loop and the ensemble and can change snow simulations,
+  particle weights, resampling decisions and benchmark scores such as CRPSS.
+  The exact historical example is available in
+  [v0.9.4](https://github.com/openamundsen/openamundsen-da/tree/v0.9.4/examples/rofental).
+- The files use the upstream hourly timestamps, precision and five forcing
+  variables (temperature, precipitation, shortwave radiation, relative
+  humidity and wind speed). They also inherit the upstream station coverage.
+  [Upstream CSVs, CC BY 4.0](https://github.com/openamundsen/openamundsen-examples/tree/9bce91e347991cc9a29fee85cc1918db4dd9f454/data/rofental/meteo/csv)
+  · [Station observations, Department of Geography, University of Innsbruck](https://doi.org/10.5880/fidgeo.2023.037)
+  · [CC BY 4.0 license](https://creativecommons.org/licenses/by/4.0/)
+- Ten missing hourly precipitation entries were filled. At Bella Vista on
+  7 December 2020 the cumulative gauge rose by 1.7 mm across a logger gap.
+  The amounts for hours ending at 13:00 through 18:00 are 0.2, 0.4, 0.1,
+  0.5, 0.4 and 0.1 mm. Their timing was estimated from Pitztaler Gletscher
+  (station 184) by scaling its 1.4 mm total to 1.7 mm and rounding to tenths
+  while preserving the total. At Latschbloder and Proviantdepot the gauges
+  recorded no increase across midnight on 1 January 2022 and 1 January 2023,
+  giving 0.00 mm for each of those four hours.
+  [GeoSphere Austria ten-minute observations, CC BY 4.0](https://data.hub.geosphere.at/en/dataset/klima-v2-10min)
 
 ### `obs/`
 - Observation data and prepared summaries.

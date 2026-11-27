@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Materialize the shipped Rofental setup used by the manuscript."""
+"""Copy a Rofental setup. Use v0.9.4 for the original manuscript case."""
 
 from __future__ import annotations
 
@@ -42,7 +42,10 @@ def materialize_setup(
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("target", type=Path, help="New setup directory to create")
-    parser.add_argument("--base-setup", type=Path, default=DEFAULT_BASE)
+    parser.add_argument(
+        "--base-setup", type=Path, default=DEFAULT_BASE,
+        help="Source setup (default: this checkout's example). Use v0.9.4 for manuscript scores.",
+    )
     parser.add_argument("--overwrite", action="store_true")
     return parser
 
@@ -58,7 +61,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     except (OSError, ManuscriptSetupError) as exc:
         print(f"manuscript setup error: {exc}")
         return 1
-    print(f"Materialized shipped manuscript setup at {target}")
+    print(f"Copied Rofental setup from {args.base_setup} to {target}")
+    print("The original manuscript scores use the v0.9.4 example inputs.")
     return 0
 
 

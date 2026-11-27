@@ -2,7 +2,7 @@
   "schema_version": 1,
   "source": "examples/rofental",
   "reference_configuration": "M_20230503_s1415935400_sig200_g095",
-  "note": "The manuscript reference setup is copied directly from the shipped Rofental example without scientific-input overlays or post-run observation substitutions.",
+  "note": "The manuscript reference setup is copied directly from the v0.9.4 Rofental example with its controlled 40% precipitation reduction without scientific-input overlays or post-run observation substitutions.",
   "config_values": [
     {"file": "setup", "path": ["resolution"], "expected": 100},
     {"file": "setup", "path": ["timestep"], "expected": "3H"},
