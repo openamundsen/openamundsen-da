@@ -11,12 +11,17 @@ examples/rofental/
 |-- grids/
 |-- meteo/
 |-- obs/
+|-- planner/
 `-- projects/
 ```
 
 ### `rofental.yml`
 - Setup-level, stable openAMUNDSEN configuration.
 - Shared by all projects inside this setup.
+
+### `planner/`
+
+Four-winter observation selection for the Rofental reanalysis. Use the shared rules to compare monthly, 14-day and weekly schedules. [Observation Planner guide](../docs/guides/observation-planner.md)
 
 ### `env/`
 - `roi.gpkg`: single-feature region of interest polygon used for masking and aggregation.

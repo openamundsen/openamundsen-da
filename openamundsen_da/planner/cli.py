@@ -5,14 +5,13 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from .holdouts import HOLDOUT_FIELDS, SUMMARY_FIELDS, generate_holdouts, schedule_summary
-from .selection import IDENTITY, SCHEDULE_FIELDS, compile_rules, generate_schedule
-from .tables import read_rows, write_rows
-
-_EXCLUSION_FIELDS = (*IDENTITY, "schedule", "period_start", "period_end", "reason", "effective_limits")
-
-
 def _select(args: argparse.Namespace) -> int:
+    from .holdouts import HOLDOUT_FIELDS, SUMMARY_FIELDS, generate_holdouts, schedule_summary
+    from .selection import IDENTITY, SCHEDULE_FIELDS, compile_rules, generate_schedule
+
+    exclusion_fields = (*IDENTITY, "schedule", "period_start", "period_end", "reason", "effective_limits")
+    from .tables import read_rows, write_rows
+
     rules = compile_rules(read_rows(args.rules), args.year)
     inventory = read_rows(args.inventory)
     exclusions = []
@@ -32,7 +31,7 @@ def _select(args: argparse.Namespace) -> int:
     summary_path = args.summary or output.with_stem(output.stem + "_summary")
     tables = [
         (output, rows, fields),
-        (exclusions_path, exclusions, _EXCLUSION_FIELDS),
+        (exclusions_path, exclusions, exclusion_fields),
         (summary_path, summary, SUMMARY_FIELDS),
     ]
     sources = [args.rules, args.inventory, getattr(args, "holdouts", None)]
@@ -56,6 +55,7 @@ def _select(args: argparse.Namespace) -> int:
 
 
 def _plot(args: argparse.Namespace) -> int:
+    from .tables import read_rows
     from .timeline import plot_timeline
 
     schedules = {}
@@ -124,3 +124,21 @@ def add_commands(subparsers) -> None:
     )
     plot.add_argument("--title", help="Optional figure title, for example the winter")
     plot.add_argument("--output", type=Path, required=True, help="PNG timeline to write")
+
+
+def _validate(args: argparse.Namespace) -> int:
+    from .validation import _validate_command
+
+    return _validate_command(args)
+
+
+def add_validation(subparsers):
+    parser = subparsers.add_parser("validate", help="Validate reviewed schedules without modifying any files")
+    parser.add_argument("--project-dir", type=Path, required=True, help="Directory containing the project YAML")
+    parser.add_argument("--schedule", type=Path, action="append", help="CSV/YAML schedule. Repeat to check multiple files.")
+    parser.add_argument("--inventory", type=Path, help="Shared winter observation inventory (CSV/YAML)")
+    parser.add_argument("--withheld", type=Path, help="Common observations withheld for evaluation (CSV/YAML)")
+    parser.add_argument("--rules", type=Path, help="Observation selection rules (CSV/YAML)")
+    parser.add_argument("--schedule-name", help="Schedule name in the rules when the input is unlabeled")
+    parser.add_argument("--year", type=int, help="Base year for relative rule periods (default: project start year)")
+    parser.set_defaults(planner_handler=_validate)

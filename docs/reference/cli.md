@@ -11,6 +11,10 @@ nav_order: 1
 single-domain data assimilation and explicit subdomain workflows. Run
 `openamundsen-da COMMAND --help` at any level for the complete option list.
 
+## Observation Planner
+
+Use `openamundsen-da planner --help` for the inventory, holdout selection, schedule generation, validation and timeline commands. [Observation Planner guide]({{ site.baseurl }}{% link guides/observation-planner.md %})
+
 ## Paths and notation
 
 - `PROJECT_DIR` is one data-assimilation project below

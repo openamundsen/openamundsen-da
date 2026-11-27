@@ -257,12 +257,19 @@ def _resolved_summary_row(
     variable: str,
     setup_dir: Path,
     project_dir: Path,
-) -> tuple[pd.Series, datetime, str, str]:
+) -> tuple[pd.Series, datetime | None, str, str]:
     source_dir, parser, manifest, _timestep, _timezone = _observation_time_config(
         setup_dir=setup_dir,
         project_dir=project_dir,
         variable=variable,
     )
+    source_id = getattr(event, "source_id", None)
+    if source_id:
+        rows = [row for row in rows if str(row.get("source", "")).strip() == source_id]
+        if len(rows) == 1 and not getattr(event, "observation_time", None):
+            return rows[0], None, "date_only", "unknown"
+        if not rows:
+            raise ValueError(f"Reviewed source_id {source_id!r} absent from {variable} summary on {event.date}")
     resolved: list[tuple[pd.Series, datetime, str, str]] = []
     for row in rows:
         if "acquisition_time" in row and pd.notna(row["acquisition_time"]):
@@ -387,27 +394,35 @@ def prepare_project_obs_from_summary(
             setup_dir=setup_dir,
             project_dir=project_dir,
         )
-        if time_quality == "fallback_midnight":
-            logger.warning(
-                "No acquisition timestamp available for {} on {}; using UTC midnight",
-                variable,
-                ev.date,
-            )
         model_times = pd.date_range(
             start=start_dt,
             end=end_dt,
             freq=openamundsen_util.to_offset(str(timestep)),
         )
-        match = match_observation_to_model_time(
-            observation_time=observation_time,
-            model_times=model_times,
-            timezone_config=timezone_config,
-        )
-        obs_dt = match.model_time
         row = row.copy()
-        row["observation_time"] = observation_time.isoformat().replace("+00:00", "Z")
-        row["matched_model_time"] = match.model_time.isoformat()
-        row["model_time_offset_seconds"] = match.offset_seconds
+        if observation_time is None:
+            # Reviewed daily observations retain their documented date precision.
+            candidates = model_times[model_times.date == ev.date]
+            if len(candidates) != 1:
+                raise ValueError(f"Acquisition time unknown for {ev.source_id}; expected one model time on {ev.date}")
+            obs_dt = candidates[0].to_pydatetime()
+            for column in ("observation_time", "acquisition_time", "model_time_offset_seconds"):
+                if column in row:
+                    row.pop(column)
+            time_source = "date_only"
+            time_quality = "unknown"
+        else:
+            if time_quality == "fallback_midnight":
+                logger.warning("No acquisition timestamp available for {} on {}; using UTC midnight", variable, ev.date)
+            match = match_observation_to_model_time(
+                observation_time=observation_time,
+                model_times=model_times,
+                timezone_config=timezone_config,
+            )
+            obs_dt = match.model_time
+            row["observation_time"] = observation_time.isoformat().replace("+00:00", "Z")
+            row["model_time_offset_seconds"] = match.offset_seconds
+        row["matched_model_time"] = obs_dt.isoformat()
         row["time_source"] = time_source
         row["time_quality"] = time_quality
         out_csv = build_obs_csv_path(

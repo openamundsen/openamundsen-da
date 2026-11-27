@@ -17,6 +17,7 @@ import pandas as pd
 from ruamel.yaml.error import YAMLError
 
 from openamundsen_da.exceptions import LowDiskEmergencyError, LowDiskPauseError
+from openamundsen_da.planner.validation import project_event_rows
 from openamundsen_da.core.env import _read_yaml_file
 from openamundsen_da.io.paths import (
     default_results_dir,
@@ -1093,7 +1094,7 @@ def _map_support_storage_bound(
     overwrite: bool,
 ) -> int:
     """Reserve the event-map support atomic temporary only when still needed."""
-    events = list((project_cfg.get("data_assimilation") or {}).get("assimilation_events") or [])
+    events = project_event_rows(project_dir, project_cfg) or []
     fraction_variables = {
         str(event.get("variable", ""))
         for event in events
@@ -1452,10 +1453,7 @@ def estimate_parent_render_bytes(
     if grid_cell_count < 1:
         raise ValueError("grid_cell_count must be positive")
     project_cfg = _read_yaml_file(find_project_yaml(project_dir)) or {}
-    events = list(
-        ((project_cfg.get("data_assimilation") or {}).get("assimilation_events"))
-        or []
-    )
+    events = project_event_rows(project_dir, project_cfg) or []
     planned = max(
         PARENT_RENDER_MIN_BYTES,
         int(

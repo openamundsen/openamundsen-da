@@ -336,3 +336,45 @@ def test_spacing_across_periods_and_no_quality_candidates():
     summary = []
     assert generate_holdouts([], compile_rules([evaluation()], 2020), summary=summary) == []
     assert summary[0]["requested"] == 2 and summary[0]["selected"] == 0
+
+
+def test_plot_separates_overlapping_variables_and_empty_rows(tmp_path, monkeypatch):
+    from openamundsen_da.methods.viz import common
+    from openamundsen_da.planner.timeline import plot_timeline
+
+    reviewed = {}
+
+    def capture(fig, output):
+        axis, = fig.axes
+        reviewed[output.name] = {
+            "positions": [c.get_offsets()[0].tolist() for c in axis.collections],
+            "labels": [t.get_text() for t in axis.get_legend().get_texts()] if axis.get_legend() else [],
+            "x_ticks": axis.get_xticks().tolist(),
+        }
+
+    monkeypatch.setattr(common, "save_figure_png", capture)
+    missed = {"variable": "scf", "date": "", "target_date": "2020-01-01"}
+    station = {"variable": "station_hs", "date": "2020-01-01"}
+    plot_timeline({"7-day": [missed, station]}, [], tmp_path / "overlap.png")
+    (x0, y0), (x1, y1) = reviewed["overlap.png"]["positions"]
+    assert x0 == x1
+    assert -0.5 < y0 < y1 < 0.5
+    assert reviewed["overlap.png"]["labels"] == ["SCF", "station HS", "Missed target"]
+    plot_timeline({"empty": []}, [], tmp_path / "empty.png")
+    assert reviewed["empty.png"] == {"positions": [], "labels": [], "x_ticks": []}
+
+
+def test_cli_preserves_other_outputs_when_any_destination_already_exists(tmp_path):
+    rules, inventory, output = [tmp_path / name for name in ("rules.csv", "inventory.csv", "selection.csv")]
+    write_rows(rules, [assimilation()])
+    write_rows(inventory, [], fields=["date", "variable"])
+    summary = tmp_path / "selection_summary.csv"
+    summary.write_text("reviewed summary\n")
+    args = ["planner", "generate", "--rules", str(rules), "--inventory", str(inventory), "--year", "2020",
+            "--output", str(output), "--schedule", "trial"]
+    assert main(args) == 1
+    assert summary.read_text() == "reviewed summary\n"
+    assert not output.exists()
+    assert main([*args, "--output", str(rules), "--overwrite"]) == 1
+    assert read_rows(rules)[0]["variable"] == "scf"
+    assert main([*args, "--inventory", str(tmp_path / "missing.csv")]) == 1

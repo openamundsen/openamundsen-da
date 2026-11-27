@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from datetime import date, datetime
 from pathlib import Path
 
+from openamundsen_da.planner.validation import project_event_rows
 from openamundsen_da.io.paths import find_project_yaml
 from openamundsen_da.observer.fraction_obs import resolve_obs_product_tag
 from openamundsen_da.util.observation_time import parse_utc_timestamp
@@ -19,6 +20,8 @@ class AssimilationEvent:
     variable: str
     product: str
     observation_time: datetime | None = None
+    source_id: str | None = None
+    station_ids: tuple[str, ...] = ()
 
 
 def _parse_event_date(text: str | None) -> date:
@@ -56,7 +59,7 @@ def load_assimilation_events(project_dir: Path) -> list[AssimilationEvent]:
     da_cfg = cfg.get("data_assimilation")
     if not isinstance(da_cfg, dict):
         raise ValueError(f"Missing required configuration key: {project_yaml} -> data_assimilation")
-    raw_events = da_cfg.get("assimilation_events")
+    raw_events = project_event_rows(project_dir, cfg)
     if not isinstance(raw_events, list) or not raw_events:
         raise ValueError(f"No assimilation_events found in {project_yaml}")
 
@@ -73,18 +76,18 @@ def load_assimilation_events(project_dir: Path) -> list[AssimilationEvent]:
                 f"Configuration value must not be empty: data_assimilation.assimilation_events[{idx}].date"
             )
         dval = _parse_event_date(str(dtxt))
+        var = _parse_event_variable(entry.get("variable"), idx=idx)
         observation_time = None
         if entry.get("observation_time") is not None:
             observation_time = parse_utc_timestamp(
                 entry["observation_time"],
                 field=f"data_assimilation.assimilation_events[{idx}].observation_time",
             )
-            if observation_time.date() != dval:
+            if not is_station_variable(var) and observation_time.date() != dval:
                 raise ValueError(
                     f"data_assimilation.assimilation_events[{idx}].observation_time has UTC date "
                     f"{observation_time.date()}, expected {dval}"
                 )
-        var = _parse_event_variable(entry.get("variable"), idx=idx)
         if "product" in entry and entry["product"] is not None:
             prod = str(entry["product"]).strip()
             if not prod:
@@ -103,6 +106,8 @@ def load_assimilation_events(project_dir: Path) -> list[AssimilationEvent]:
                 variable=var,
                 product=prod_upper,
                 observation_time=observation_time,
+                source_id=entry.get("source_id"),
+                station_ids=tuple(str(entry.get("station_ids", "")).split("|")) if entry.get("station_ids") else (),
             )
         )
 

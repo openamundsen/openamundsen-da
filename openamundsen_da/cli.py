@@ -83,6 +83,15 @@ def build_parser() -> argparse.ArgumentParser:
     )
     commands = parser.add_subparsers(dest="command", required=True)
 
+    from openamundsen_da.planner.cli import add_commands, add_validation
+    from openamundsen_da.planner.inventory_cli import add_command as add_inventory
+
+    planner = commands.add_parser("planner", help="Select and review observations before a project run")
+    planner_commands = planner.add_subparsers(dest="planner_command", required=True)
+    add_inventory(planner_commands)
+    add_commands(planner_commands)
+    add_validation(planner_commands)
+
     observations = commands.add_parser("observations", help="Preprocess configured observation products")
     observation_commands = observations.add_subparsers(dest="observation_command", required=True)
     snow = _project_leaf(
@@ -432,6 +441,8 @@ def main(argv: list[str] | None = None) -> int:
         if value is not None
     )
     try:
+        if args.command == "planner":
+            return args.planner_handler(args)
         result = _dispatch(args)
     except (OpenAmundsenDAError, OSError, RuntimeError, ValueError) as exc:
         if getattr(args, "json", False):

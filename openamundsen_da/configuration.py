@@ -7,6 +7,7 @@ import math
 from pathlib import Path
 from typing import Any
 
+from openamundsen_da.planner.validation import planner_input_paths, project_event_rows, reviewed_schedule
 from openamundsen_da.exceptions import ProjectValidationError
 from openamundsen_da.io.paths import find_project_yaml, find_setup_yaml
 from openamundsen_da.util.station_da import is_station_variable
@@ -28,6 +29,7 @@ _OBS_PRODUCT_KEYS = {
 _OBS_STATION_KEYS = {"dir"}
 _DA_KEYS = {
     "assimilation_events",
+    "observation_planner",
     "benchmark",
     "h_of_x",
     "landcover_mask",
@@ -43,7 +45,7 @@ _DA_KEYS = {
     "wet_snow",
     "wet_snow_line",
 }
-_EVENT_KEYS = {"date", "observation_time", "product", "variable"}
+_EVENT_KEYS = {"date", "observation_time", "product", "variable", "source_id", "station_ids"}
 _RESTART_KEYS = {"dump_state", "state_pattern"}
 _MODEL_GRID_FORMATS = {"geotiff", "netcdf"}
 _PRIOR_FORCING_KEYS = {
@@ -83,6 +85,7 @@ class ProjectConfiguration:
     setup: dict[str, Any]
     project: dict[str, Any]
     model_grid_format: str
+    planner_inputs: tuple[Path, ...] = ()
 
 
 def _unknown_keys(mapping: dict[str, Any], allowed: set[str], *, path: str, errors: list[str]) -> None:
@@ -355,7 +358,7 @@ def _validate_events(project: dict[str, Any], *, errors: list[str]) -> set[str]:
 
             try:
                 stamp = parse_utc_timestamp(observation_time, field=f"{path}.observation_time")
-                if date is not None and stamp.date().isoformat() != str(date):
+                if date is not None and not is_station_variable(str(variable_raw)) and stamp.date().isoformat() != str(date):
                     errors.append(
                         f"{path}.observation_time has UTC date {stamp.date()}, expected {date}"
                     )
@@ -463,6 +466,14 @@ def load_project_configuration(project_dir: str | Path) -> ProjectConfiguration:
             errors=errors,
         )
 
+    da_section = project.get("data_assimilation")
+    planner_inputs = ()
+    if isinstance(da_section, dict) and reviewed_schedule(da_section):
+        try:
+            planner_inputs = planner_input_paths(resolved_project, da_section)
+            da_section["assimilation_events"] = project_event_rows(resolved_project, project)
+        except (ValueError, OSError, TypeError, AttributeError) as exc:
+            errors.append(str(exc))
     variables = _validate_events(project, errors=errors)
     da = project.get("data_assimilation") if isinstance(project.get("data_assimilation"), dict) else {}
     _validate_pf_stages(da, errors=errors)
@@ -517,6 +528,7 @@ def load_project_configuration(project_dir: str | Path) -> ProjectConfiguration:
         setup=setup,
         project=project,
         model_grid_format=model_grid_format,
+        planner_inputs=planner_inputs,
     )
 
 

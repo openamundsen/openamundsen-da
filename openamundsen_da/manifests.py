@@ -160,7 +160,7 @@ def project_scientific_input_inventory(
         base = setup_path(grids["dir"]) / f"roi_{domain}_{resolution}"
         generated_roi_paths = {base.with_suffix(".asc"), base.with_suffix(".prj")}
 
-    files = [config.setup_yaml, config.project_yaml, *sorted(config.project_dir.glob("*.yml"))]
+    files = [config.setup_yaml, config.project_yaml, *getattr(config, "planner_inputs", ()), *sorted(config.project_dir.glob("*.yml"))]
     scientific_roots: set[Path] = {config.setup_dir / "env"}
     files = [
         path

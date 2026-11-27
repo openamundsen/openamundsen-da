@@ -145,6 +145,7 @@ def _build_active_stations(
     config: StationAssimilationConfig,
     model_clock: ModelClockConfig,
     variable: str,
+    station_ids: tuple[str, ...] = (),
 ) -> list[ActiveStation]:
     """Resolve active stations with observation values and effective sigmas."""
     spec = station_variable_spec(variable)
@@ -153,6 +154,8 @@ def _build_active_stations(
 
     active: list[ActiveStation] = []
     for station_id in _candidate_station_ids(obs_dir, members):
+        if station_ids and station_id not in station_ids:
+            continue
         if station_id in disabled_station_ids:
             logger.debug("Skipping station {} for {}: use_for_da=false", station_id, variable)
             continue
@@ -219,6 +222,10 @@ def _build_active_stations(
             )
         )
 
+    missing = set(station_ids) - {station.station_id for station in active}
+    if missing:
+        raise ValueError(f"Reviewed station IDs unavailable for {variable} on {date.date()}: {sorted(missing)}")
+
     if not active:
         raise ValueError(f"No active station observations found for {variable} on {date.date()} in {obs_dir}")
 
@@ -257,6 +264,7 @@ def assimilate_station_for_date(
     ensemble: str,
     date: datetime,
     variable: str,
+    station_ids: tuple[str, ...] = (),
 ) -> StationAssimilationResult:
     """Assimilate one station variable for one ROI/date using point outputs."""
     project_dir = infer_project_dir(step_dir)
@@ -275,6 +283,7 @@ def assimilate_station_for_date(
         config=config,
         model_clock=model_clock,
         variable=variable,
+        station_ids=station_ids,
     )
 
     member_rows: list[dict] = []
@@ -391,6 +400,7 @@ def assimilate_station_hs_for_date(
     step_dir: Path,
     ensemble: str,
     date: datetime,
+    station_ids: tuple[str, ...] = (),
 ) -> StationAssimilationResult:
     """Assimilate station snow depth (HS) observations for one DA date."""
     return assimilate_station_for_date(
@@ -398,6 +408,7 @@ def assimilate_station_hs_for_date(
         step_dir=step_dir,
         ensemble=ensemble,
         date=date,
+        station_ids=station_ids,
         variable="station_hs",
     )
 
@@ -408,6 +419,7 @@ def assimilate_station_swe_for_date(
     step_dir: Path,
     ensemble: str,
     date: datetime,
+    station_ids: tuple[str, ...] = (),
 ) -> StationAssimilationResult:
     """Assimilate station SWE observations for one DA date."""
     return assimilate_station_for_date(
@@ -415,5 +427,6 @@ def assimilate_station_swe_for_date(
         step_dir=step_dir,
         ensemble=ensemble,
         date=date,
+        station_ids=station_ids,
         variable="station_swe",
     )

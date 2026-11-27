@@ -41,6 +41,7 @@ from typing import List
 
 from loguru import logger
 
+from openamundsen_da.planner.validation import project_event_rows
 from openamundsen_da.io.paths import find_setup_yaml, find_project_yaml
 from openamundsen_da.util.loguru_utils import configure_cli_logger
 from openamundsen_da.util.yaml_utils import read_yaml_mapping
@@ -122,8 +123,7 @@ def _load_project_config(setup_dir: Path, project_dir: Path) -> tuple[timedelta,
     end = _parse_datetime(str(cfg.get("end_date")))
 
     assim_dates: List[datetime] = []
-    da_cfg = cfg.get("data_assimilation") or {}
-    events_cfg = da_cfg.get("assimilation_events") or []
+    events_cfg = project_event_rows(project_dir, cfg) or []
     if not isinstance(events_cfg, list) or not events_cfg:
         raise ValueError(f"'data_assimilation.assimilation_events' missing or empty in {project_yaml}")
     for entry in events_cfg:
@@ -195,6 +195,13 @@ def plan_project_steps(
     """
     dt, project = _load_project_config(setup_dir, project_dir)
 
+    return propagation_windows(dt, project)
+
+
+def propagation_windows(dt: timedelta, project: ProjectConfig) -> tuple[ProjectStepPlan, ...]:
+    """Derive the shared preparation and schedule-validation windows from assigned dates."""
+    if project.start >= project.end:
+        raise ValueError("Project start_date must precede end_date")
     assim = project.assimilation_event_dates
     n_steps = len(assim) + 1
 

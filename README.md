@@ -15,6 +15,7 @@ This repository documents the software interface and operational workflow.
 ## Documentation
 
 - [Installation](https://doc-da.openamundsen.org/installation.html)
+- [Observation Planner](docs/guides/observation-planner.md)
 - [Input data](https://doc-da.openamundsen.org/guides/observations.html)
 - [Configuration](https://doc-da.openamundsen.org/guides/configuration.html)
 - [Running the model](https://doc-da.openamundsen.org/running.html)

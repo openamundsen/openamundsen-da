@@ -44,6 +44,7 @@ from openamundsen_da.subdomain.leaf_finalization import (
 )
 from openamundsen_da.subdomain.manifest import SubdomainManifest
 from openamundsen_da.subdomain.status import save_stage, terminal_status
+from openamundsen_da.planner.validation import project_event_rows
 from openamundsen_da.util.da_events import load_assimilation_events
 from openamundsen_da.util.da_output import (
     output_retention_mode,
@@ -114,8 +115,7 @@ def _normalize_event_variable(value: object) -> str:
 
 def _validate_project_events_have_obs(project_yaml: Path, *, available_by_var: dict[str, set[date]]) -> None:
     cfg = _read_yaml_file(project_yaml) or {}
-    da_cfg = cfg.get("data_assimilation") or {}
-    raw_events = list(da_cfg.get("assimilation_events") or [])
+    raw_events = project_event_rows(project_yaml.parent, cfg) or []
     missing: list[str] = []
 
     for idx, ev in enumerate(raw_events, start=1):

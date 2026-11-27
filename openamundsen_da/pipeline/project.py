@@ -394,6 +394,7 @@ def _run_assimilation_for_event(
             step_dir=step_dir,
             ensemble="prior",
             date=assim_dt,
+            station_ids=ev.station_ids,
         )
         diag_csv = _write_station_diagnostics(
             assim_dir=assim_dir,
@@ -408,6 +409,7 @@ def _run_assimilation_for_event(
             step_dir=step_dir,
             ensemble="prior",
             date=assim_dt,
+            station_ids=ev.station_ids,
         )
         diag_csv = _write_station_diagnostics(
             assim_dir=assim_dir,

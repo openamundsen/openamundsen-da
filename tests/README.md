@@ -503,3 +503,7 @@ maps while selecting only the three primary WSLA rows for the DA7 manuscript
 map. The DA8 manuscript map remains unfiltered. The validator requires the
 station altitudes distributed by the upstream Rofental example, including
 2659 m for Proviantdepot.
+
+## Observation Planner
+
+Run `pytest -q tests/unit -k planner` for the observation planner contracts, including editable table formats and selection using the project observation inputs.
