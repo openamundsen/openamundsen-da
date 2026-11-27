@@ -21,7 +21,10 @@ examples/rofental/
 
 ### `planner/`
 
-Four-winter observation selection for the Rofental reanalysis. Use the shared rules to compare monthly, 14-day and weekly schedules. [Observation Planner guide](../docs/guides/observation-planner.md)
+Four-winter observation selection for the Rofental reanalysis. Schedule rules
+live in `schedules/`. Each directory in `periods/` holds an inventory, a shared
+list of withheld observations and dated monthly, 14-day and weekly schedules.
+[Rofental planner](rofental/planner/) · [Observation Planner guide](../docs/guides/observation-planner.md)
 
 ### `env/`
 - `roi.gpkg`: single-feature region of interest polygon used for masking and aggregation.

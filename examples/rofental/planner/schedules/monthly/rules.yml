@@ -1,0 +1,26 @@
+defaults:
+  frequency: monthly
+  tolerance_days: 7
+  reschedule: true
+  min_spacing_days: 1
+observations:
+  wet_snow_line:
+    period_start: 1-02-15
+    period_end: 1-06-30
+    priority: 1
+    ranking: quality
+    min_support_coverage_ratio: 0.1
+    min_n_wet: 50
+    min_wet_bands: 1
+  scf:
+    period_start: 0-10-01
+    period_end: 1-06-30
+    priority: 2
+    ranking: quality
+    min_support_coverage_ratio: 0.1
+  station_hs:
+    period_start: 0-11-01
+    period_end: 1-02-last
+    priority: 3
+    ranking: nearest
+    min_station_count: 2
