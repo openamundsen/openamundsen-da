@@ -379,3 +379,35 @@ def test_cli_preserves_other_outputs_when_any_destination_already_exists(tmp_pat
     assert main([*args, "--output", str(rules), "--overwrite"]) == 1
     assert read_rows(rules)[0]["variable"] == "scf"
     assert main([*args, "--inventory", str(tmp_path / "missing.csv")]) == 1
+
+
+def test_plot_panels_reads_project_tables_relative_to_config(tmp_path, monkeypatch):
+    from openamundsen_da.planner import timeline
+
+    config = tmp_path / "plots" / "compare.yml"
+    periods = {"Late survey": "late", "Early survey": "early", "Extra survey": "extra"}
+    for day, directory in enumerate(periods.values(), 1):
+        row = {"variable": "scf", "date": f"2021-05-{day:02}"}
+        write_rows(config.parent / directory / "chosen.csv", [row])
+        write_rows(config.parent / directory / "reserved.yaml", [row])
+    config.write_text(json.dumps({
+        "title": "Surveys", "panels": periods, "schedules": {"Trial": "chosen.csv"}, "withheld": "reserved.yaml",
+    }))
+    output = tmp_path / "comparison.png"
+    calls = []
+
+    def inspect(panels, path, *, title, columns):
+        calls.append([panel.name for panel in panels])
+        assert title == "Surveys" and path == output and columns == 2
+        for day, panel in enumerate(panels, 1):
+            assert panel.withheld == panel.schedules["Trial"]
+            assert panel.withheld[0]["date"] == f"2021-05-{day:02}"
+
+    monkeypatch.setattr(timeline, "plot_timelines", inspect)
+    args = ["planner", "plot", "--panels", str(config), "--output", str(output)]
+    assert main(args) == 0
+    assert calls == [list(periods)]
+    assert main([*args, "--withheld", "extra.csv"]) == 1
+    config.write_text("panels: []\nschedules: {}\n")
+    assert main(args) == 1
+    assert len(calls) == 1

@@ -4,6 +4,8 @@ from pathlib import Path
 
 import pytest
 
+from openamundsen_da.cli import main
+
 from openamundsen_da.planner.holdouts import generate_holdouts
 from openamundsen_da.planner.selection import compile_rules, generate_schedule, matches_holdout
 from openamundsen_da.planner.tables import read_rows, write_rows
@@ -38,7 +40,6 @@ def test_reviewed_winter_is_reproducible(tmp_path, year, reserved, expected):
 
 
 def test_four_panel_timeline_matches_reviewed_winter_plots(monkeypatch):
-    import runpy
     from datetime import date
 
     from matplotlib.dates import num2date
@@ -70,5 +71,14 @@ def test_four_panel_timeline_matches_reviewed_winter_plots(monkeypatch):
         assert "Parentheses" in fig.legends[0].get_title().get_text()
 
     monkeypatch.setattr(common, "save_figure_png", inspect)
-    runpy.run_path(str(PLANNER / "plot_timelines.py"))["render"](PLANNER)
+    for year in range(2019, 2023):
+        winter = PLANNER / f"{year}_{year + 1}"
+        assert main([
+            "planner", "plot", "--schedule", f"Monthly={winter / 'monthly.yml'}",
+            "--schedule", str(winter / "14-day.yml"), "--schedule", str(winter / "7-day.yml"),
+            "--withheld", str(winter / "withheld.yml"), "--output", str(winter / "timeline.png"),
+        ]) == 0
+    assert main([
+        "planner", "plot", "--panels", str(PLANNER / "timeline.yml"), "--output", str(PLANNER / "timeline.png"),
+    ]) == 0
     assert combined_titles == ["(a) 2019/20", "(b) 2020/21", "(c) 2021/22", "(d) 2022/23"]

@@ -54,25 +54,68 @@ def _select(args: argparse.Namespace) -> int:
     return 0
 
 
+def _read_schedule(path: Path):
+    from .tables import read_rows
+
+    records = read_rows(path)
+    names = {row["schedule"] for row in records if row.get("schedule")}
+    if len(names) > 1:
+        raise ValueError(f"{path}: expected one schedule per file, found {sorted(names)}")
+    return next(iter(names), path.stem), records
+
+
+def _plot_panels(config_path: Path, output: Path, title: str | None) -> None:
+    from openamundsen_da.util.yaml_utils import read_yaml_mapping
+
+    from .tables import read_rows
+    from .timeline import TimelinePanel, plot_timelines
+
+    config = read_yaml_mapping(config_path, error_cls=ValueError, context="Timeline configuration")
+    unknown = config.keys() - {"panels", "schedules", "withheld", "title"}
+    if unknown:
+        raise ValueError(f"{config_path}: unknown timeline fields: {', '.join(map(str, unknown))}")
+    for field in ("panels", "schedules"):
+        mapping = config.get(field)
+        if not isinstance(mapping, dict) or not mapping or not all(
+            isinstance(label, str) and label.strip() and isinstance(path, str) and path.strip()
+            for label, path in mapping.items()
+        ):
+            raise ValueError(f"{config_path}: {field} must map nonempty labels to paths")
+    for field in ("withheld", "title"):
+        if field in config and not (isinstance(config[field], str) and config[field].strip()):
+            raise ValueError(f"{config_path}: {field} must be a nonempty string")
+
+    panels = []
+    for name, directory in config["panels"].items():
+        root = config_path.parent / directory
+        schedules = {
+            label: _read_schedule(root / filename)[1]
+            for label, filename in config["schedules"].items()
+        }
+        withheld = read_rows(root / config["withheld"]) if "withheld" in config else []
+        panels.append(TimelinePanel(name, schedules, withheld))
+    plot_timelines(panels, output, title=title or config.get("title"), columns=min(2, len(panels)))
+
+
 def _plot(args: argparse.Namespace) -> int:
     from .tables import read_rows
     from .timeline import plot_timeline
 
-    schedules = {}
-    for spec in args.schedule:
-        name, sep, path = spec.partition("=")
-        if not sep:
-            path, name = name, ""
-        records = read_rows(Path(path))
-        names = {r["schedule"] for r in records if r.get("schedule")}
-        if len(names) > 1:
-            raise ValueError(f"{path}: expected one schedule per file, found {sorted(names)}")
-        name = name or next(iter(names), Path(path).stem)
-        if name in schedules:
-            raise ValueError(f"duplicate plotted schedule label {name!r}")
-        schedules[name] = records
-    holdouts = read_rows(args.holdouts) if args.holdouts else []
-    plot_timeline(schedules, holdouts, args.output, title=args.title)
+    if args.panels:
+        if args.holdouts:
+            raise ValueError("with --panels, set withheld in the panel configuration")
+        _plot_panels(args.panels, args.output, args.title)
+    else:
+        schedules = {}
+        for spec in args.schedule:
+            label, sep, filename = spec.partition("=")
+            default_label, rows = _read_schedule(Path(filename if sep else label))
+            name = label if sep and label else default_label
+            if name in schedules:
+                raise ValueError(f"duplicate plotted schedule label {name!r}")
+            schedules[name] = rows
+        holdouts = read_rows(args.holdouts) if args.holdouts else []
+        plot_timeline(schedules, holdouts, args.output, title=args.title)
     print(args.output)
     return 0
 
@@ -110,12 +153,13 @@ def add_commands(subparsers) -> None:
                 type=Path,
                 help="Reviewed CSV or YAML evaluation list; default: select from rules",
             )
-    plot = subparsers.add_parser("plot", help="Plot editable schedules for one winter")
+    plot = subparsers.add_parser("plot", help="Plot editable schedules for one or more planning periods")
     plot.set_defaults(planner_handler=_plot)
-    plot.add_argument(
+    source = plot.add_mutually_exclusive_group(required=True)
+    source.add_argument("--panels", type=Path, metavar="FILE", help="YAML configuration for a combined timeline")
+    source.add_argument(
         "--schedule",
         action="append",
-        required=True,
         metavar="[LABEL=]FILE",
         help="Repeat for each schedule, in display order",
     )

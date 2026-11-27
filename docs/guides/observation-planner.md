@@ -74,7 +74,14 @@ qualify, inspect the achieved count in the companion `_summary` table and the
 reasons in `_exclusions`. A station reservation can identify individual
 stations. Other available stations can still contribute if the minimum is met.
 
-Parentheses give the number of scheduled updates or withheld observations. Crosses mark missed targets. The [four-winter Rofental example](../../examples/rofental/planner/README.md) also renders all winters together with a common legend and aligned October–June panels.
+Parentheses give the number of scheduled updates or withheld observations. Crosses mark missed targets.
+
+For a combined figure, run `openamundsen-da planner plot --panels timeline.yml --output timeline.png`.
+In the [Rofental configuration](../../examples/rofental/planner/timeline.yml), `panels` maps display labels
+to directories relative to the configuration file. `schedules` maps row labels to CSV or YAML filenames
+in each directory. Both follow the order in the file. Set `withheld` to include an evaluation table
+from each directory and `title` to name the figure. Each panel spans the months covered by its rows.
+The planner arranges the panels in two columns and shares one legend.
 
 Review the actual and missed targets, variable assignments and common evaluation
 observations. Edit the schedule file directly if needed. Generation protects an

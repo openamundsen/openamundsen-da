@@ -1,0 +1,11 @@
+title: Rofental assimilation schedules and withheld observations
+panels:
+  2019/20: '2019_2020'
+  2020/21: '2020_2021'
+  2021/22: '2021_2022'
+  2022/23: '2022_2023'
+schedules:
+  Monthly: monthly.yml
+  14-day: 14-day.yml
+  7-day: 7-day.yml
+withheld: withheld.yml

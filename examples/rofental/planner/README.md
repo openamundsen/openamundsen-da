@@ -11,6 +11,12 @@ The [four-winter timeline](timeline.png) compares the schedules on the same Octo
 | [2021/22](2021_2022/timeline.png) | 15 | 24 | 45 | 4 / 1 |
 | [2022/23](2022_2023/timeline.png) | 14 | 26 | 42 | 4 / 2 |
 
+From the planner directory, reproduce the combined figure from the reviewed schedules:
+
+```bash
+openamundsen-da planner plot --panels timeline.yml --output timeline.png
+```
+
 ## Selection and verification
 
 Optical fractional snow cover (SCF) targets run from October 1 through June 30, station snow depth (HS) from November 1 through the last day of February and radar wet-snow line altitude (WSLA) from February 15 through June 30. Each period starts its own sequence of targets. The timing tolerances are seven days for monthly targets, three days for 14-day targets and two days for weekly targets. Both stations must have usable snow depth at local model midnight. The satellite products require at least 10% valid catchment coverage. Radar additionally requires a retrievable line, at least 50 wet pixels and at least one wet elevation band.
@@ -42,8 +48,13 @@ for year in 2019 2020 2021 2022; do
       --schedule "$cadence" --output "$dest/$cadence.yml"
     cmp "$winter/$cadence.yml" "$dest/$cadence.yml"
   done
+  openamundsen-da planner plot --schedule "Monthly=$dest/monthly.yml" \
+    --schedule "$dest/14-day.yml" --schedule "$dest/7-day.yml" --withheld "$dest/withheld.yml" \
+    --title "Rofental assimilation schedules and withheld observations, $year/${next:2}" \
+    --output "$dest/timeline.png"
 done
-python plot_timelines.py "$out"
+cp timeline.yml "$out/"
+openamundsen-da planner plot --panels "$out/timeline.yml" --output "$out/timeline.png"
 ```
 
 The shipped Rofental setup includes the source files for 2022/23. Run its read-only validation against all three schedules after editing any schedule or its shared evaluation list.
