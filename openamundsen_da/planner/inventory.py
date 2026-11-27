@@ -170,6 +170,20 @@ def _summary_issues(row: dict, variable: str, config: dict) -> list[str]:
     return issues
 
 
+def _measure_support(setup, project_dir, config, variable, landcover, item, issues):
+    try:
+        support = observation_source_support(
+            setup_dir=setup, project_dir=project_dir, source=item["source_id"], observable=variable,
+            landcover_cfg=landcover, read_only=True,
+        )
+        item.update(support_coverage_ratio=support.coverage_ratio, support_cells=support.n_eligible, quality_for_ranking=support.n_valid)
+        if not support.n_valid:
+            issues.append("no valid pixels in the project area")
+        _check_files(setup, config, variable, item["source_id"])
+    except (OSError, ValueError, RuntimeError, KeyError) as exc:
+        issues.append(str(exc))
+
+
 def _satellite_rows(project_dir, setup, config, variable, start, end, source_ids, dates):
     product, filename = _product(variable)
     summary = resolve_fraction_summary_path(setup, project_dir, filename)
@@ -195,17 +209,7 @@ def _satellite_rows(project_dir, setup, config, variable, start, end, source_ids
         item.update(variable=variable, source_id=source, observation_time=stamp,
                     product=config["obs"][product].get("product_tag", ""),
                     n_wet=row.get("wet_snow_line_n_wet", ""), wet_bands=row.get("wet_snow_line_wet_bands", ""))
-        try:
-            support = observation_source_support(
-                setup_dir=setup, project_dir=project_dir, source=source, observable=variable,
-                landcover_cfg=landcover, read_only=True,
-            )
-            item.update(support_coverage_ratio=support.coverage_ratio, quality_for_ranking=support.n_valid)
-            if not support.n_valid:
-                issues.append("no valid pixels in the project area")
-            _check_files(setup, config, variable, source)
-        except (OSError, ValueError, RuntimeError, KeyError) as exc:
-            issues.append(str(exc))
+        _measure_support(setup, project_dir, config, variable, landcover, item, issues)
         item["quality_issue"] = "; ".join(issues)
         yield item
 
@@ -221,9 +225,12 @@ def _satellite_rows(project_dir, setup, config, variable, start, end, source_ids
             if start <= day <= end and (dates is None or day in dates) and (
                 source_ids is None or entry.source in source_ids
             ):
-                yield dict(variable=variable, date=day.isoformat(), observation_time=entry.acquisition_time,
-                           product=tag, source_id=entry.source, quality_issue=f"no observation row in {summary.name}",
-                           **limits)
+                item = dict(variable=variable, date=day.isoformat(), observation_time=entry.acquisition_time,
+                            product=tag, source_id=entry.source, **limits)
+                issues = [f"no observation row in {summary.name}"]
+                _measure_support(setup, project_dir, config, variable, landcover, item, issues)
+                item["quality_issue"] = "; ".join(issues)
+                yield item
 
 
 def build_inventory(project_dir, start, end, variables, *, station_time=None, source_ids=None, dates=None) -> list[dict]:
