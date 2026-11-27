@@ -59,6 +59,17 @@ examples/rofental/
 
 ### `obs/`
 - Observation data and prepared summaries.
+- `stations/latschbloder.csv` and `stations/proviantdepot.csv` provide hourly
+  snow depth (m) from 4 October 2019 through 30 September 2023 in fixed UTC+1.
+  The additional years use GFZ v2.0 sensors USH8 (Latschbloder) and USH9
+  (Proviantdepot). Each timestamp marks the start of a clock hour. Its value
+  is the mean of available ten-minute readings, including readings stamped
+  with fractional seconds, converted from mm to m. Hours without measurements
+  are empty. Signed readings are retained for the station validity check.
+  The 2022/23 rows retain the original depth and SWE observations. SWE is
+  available at Proviantdepot in 2022/23; the added years contain depth only.
+  [Department of Geography, University of Innsbruck, GFZ Data Services](https://doi.org/10.5880/fidgeo.2023.037)
+  · [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)
 - `snowcover/`: snow-cover raster products.
 - `wetsnow/`: Sentinel-1 wet-snow raster products.
 - `summaries/project_*/`: project-level summaries (`scf_summary.csv`, `wet_snow_summary.csv`) plus optional `wet_snow_line_diagnostics.csv` and per-date WSLA profile CSVs after wet-snow summarization. In v0.9 the primary `wet_snow_line` values are 50% wet-fraction crossings, while sector-relative WSLA diagnostics are stored as companion analysis fields in the same diagnostics/profile family.

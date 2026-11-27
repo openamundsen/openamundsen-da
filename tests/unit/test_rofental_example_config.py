@@ -162,3 +162,20 @@ def test_rofental_hourly_forcing_covers_four_winters() -> None:
         for station_id, frame in stations.items()
     }
     assert totals_mm == {"bellavista": 492.30, "latschbloder": 493.60, "proviantdepot": 499.51}
+
+
+def test_rofental_station_depth_and_swe_coverage() -> None:
+    station_dir = REPO_ROOT / "examples" / "rofental" / "obs" / "stations"
+    hours = pd.date_range("2019-10-04", "2023-09-30 23:00", freq="h")
+    depth_at_recovered_hour = {"latschbloder": 0.736167, "proviantdepot": 1.162167}
+
+    for station, expected_depth in depth_at_recovered_hour.items():
+        obs = pd.read_csv(station_dir / f"{station}.csv", index_col="time", parse_dates=True)
+        assert obs.index.equals(hours)
+        assert round(obs.at[pd.Timestamp("2021-01-15"), "snow_depth"], 6) == expected_depth
+        assert obs.loc[:"2022-09-30", "swe"].isna().all()
+        if station == "proviantdepot":
+            assert obs["swe"].count() == 8708
+            assert obs.at[pd.Timestamp("2022-10-01"), "swe"] == 15.116667
+        else:
+            assert obs["swe"].isna().all()

@@ -26,6 +26,10 @@ Expect different numerical results, including benchmark scores. Use v0.9.4 to
 reproduce the earlier results and tutorial reference images.
 [Forcing sources and corrections](https://github.com/openamundsen/openamundsen-da/blob/main/examples/README.md#meteo)
 
+The two station observation files also cover four winters. They contain hourly
+snow depth at Latschbloder and Proviantdepot from 4 October 2019 onward.
+The Proviantdepot SWE benchmark uses the existing 2022/23 observations.
+
 Copy it from the image before use:
 
 ```bash
