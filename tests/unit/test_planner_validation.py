@@ -79,6 +79,49 @@ def test_manual_quality_is_remeasured_after_edit_even_for_timing_exceptions(proj
     assert any("+5 days" in warning and "closest clear" in warning for warning in report.warnings)
 
 
+def test_overlapping_target_windows_preserve_generated_bindings_and_validate_edits(project):
+    from openamundsen_da.planner.selection import compile_rules, generate_schedule
+
+    inventory = build_inventory(project, "2022-11-06", "2022-11-08", ["station_hs"])
+    rules = [{
+        "variable": "station_hs", "purpose": "assimilation", "schedule": "dense", "ranking": "nearest",
+        "period_start": "2022-11-03", "period_end": "2022-11-08", "frequency": 3,
+        "tolerance_days": 3, "priority": 1, "reschedule": True,
+    }]
+    original = generate_schedule(inventory, compile_rules(rules, 2022), "dense", [])
+    assert [(row["target_date"], row["date"]) for row in original] == [
+        ("2022-11-03", "2022-11-06"), ("2022-11-06", "2022-11-07")
+    ]
+    rows = [{"date": row["date"], "variable": row["variable"]} for row in original]
+    path = project / "dense.yml"
+    write_rows(path, rows)
+    for schedule in (original, rows, path):
+        report = validate_schedule(project, schedule=schedule, inventory=inventory, rules=rules)
+        assert not report.errors
+        assert not report.warnings
+        assert [event["date"] for event in report.events] == ["2022-11-06", "2022-11-07"]
+
+    # Removing the second update leaves its own target empty even though the
+    # remaining observation falls exactly on that target.
+    report = validate_schedule(project, schedule=rows[:1], inventory=inventory, rules=rules)
+    assert not report.errors
+    assert [event["date"] for event in report.events] == ["2022-11-06"]
+    assert report.warnings == ["missing target 2022-11-06 for station_hs"]
+
+    # A manual target takes precedence; a newly selected date uses its nearest target.
+    for row in ({**rows[0], "target_date": "2022-11-06"}, {**rows[0], "date": "2022-11-08"}):
+        report = validate_schedule(project, schedule=[row], inventory=inventory, rules=rules)
+        assert not report.errors
+        assert [event["date"] for event in report.events] == [row["date"]]
+        assert report.warnings == ["missing target 2022-11-03 for station_hs"]
+
+    inventory = build_inventory(project, "2022-11-03", "2022-11-07", ["station_hs"])
+    rules[0]["frequency"] = 4
+    manual = {"date": "2022-11-05", "variable": "station_hs"}
+    report = validate_schedule(project, schedule=[manual], inventory=inventory, rules=rules)
+    assert any("equally near 2022-11-03 and 2022-11-07" in error for error in report.errors)
+
+
 def test_unreadable_uncertainty_is_reported_for_every_row_and_repair_is_checked(project):
     dates = ["2022-10-03", "2022-10-05"]
     rows = [dict(variable="scf", date=day) for day in dates]

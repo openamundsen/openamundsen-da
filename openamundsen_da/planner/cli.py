@@ -35,34 +35,34 @@ def _period_selection(args):
         destination, stem = directory / "schedules", args.schedule
     if args.output is None:
         args.output = table_path(destination, stem, required=False) or destination / f"{stem}.yml"
-    if args.output.resolve().parent == destination.resolve():
-        stem = args.output.stem
-        reports = directory / "reports"
-        args.summary = args.summary or reports / f"{stem}_summary{args.output.suffix}"
-        args.exclusions = args.exclusions or reports / f"{stem}_exclusions{args.output.suffix}"
-    return rules
+    reports = directory / "reports" if args.output.resolve().parent == destination.resolve() else args.output.parent
+    return rules, reports
 
 
 def _select(args: argparse.Namespace) -> int:
     from .holdouts import HOLDOUT_FIELDS, SUMMARY_FIELDS, generate_holdouts, schedule_summary
-    from .layout import load_schedule_rules
-    from .selection import IDENTITY, SCHEDULE_FIELDS, compile_rules, generate_schedule
-
-    exclusion_fields = (*IDENTITY, "schedule", "period_start", "period_end", "reason", "effective_limits")
+    from .layout import load_evaluation_rules, load_schedule_rules
+    from .schedule_output import UPDATE_FIELDS, assigned_updates
+    from .selection import IDENTITY, SCHEDULE_FIELDS, generate_schedule
     from .tables import read_rows, write_rows
 
+    exclusion_fields = (*IDENTITY, "schedule", "period_start", "period_end", "reason", "effective_limits")
+
     if args.period is not None:
-        rules = _period_selection(args)
+        rules, reports = _period_selection(args)
     else:
         if args.rules is None or args.year is None or args.inventory is None or args.output is None:
             raise ValueError("supply --period or all of --rules, --year, --inventory and --output")
         if args.planner_action == "holdouts":
-            rules = compile_rules(read_rows(args.rules), args.year)
+            rules = load_evaluation_rules(args.rules, year=args.year)
         else:
             rules = load_schedule_rules(args.rules, args.year, args.schedule)
+        reports = args.output.parent
     inventory = read_rows(args.inventory)
     exclusions = []
     summary = []
+    tables = []
+    output = args.output
     if args.planner_action == "holdouts":
         rows = generate_holdouts(inventory, rules, summary=summary, exclusions=exclusions)
         fields = HOLDOUT_FIELDS
@@ -70,17 +70,20 @@ def _select(args: argparse.Namespace) -> int:
         holdouts = (
             read_rows(args.holdouts) if args.holdouts is not None else generate_holdouts(inventory, rules)
         )
-        rows = generate_schedule(inventory, rules, args.schedule, holdouts, exclusions=exclusions)
-        summary = schedule_summary(rows, rules, args.schedule)
-        fields = SCHEDULE_FIELDS
-    output = args.output
-    exclusions_path = args.exclusions or output.with_stem(output.stem + "_exclusions")
-    summary_path = args.summary or output.with_stem(output.stem + "_summary")
-    tables = [
-        (output, rows, fields),
-        (exclusions_path, exclusions, exclusion_fields),
-        (summary_path, summary, SUMMARY_FIELDS),
-    ]
+        targets = generate_schedule(inventory, rules, args.schedule, holdouts, exclusions=exclusions)
+        summary = schedule_summary(targets, rules, args.schedule)
+        tables.append((reports / f"{output.stem}_targets{output.suffix}", targets, SCHEDULE_FIELDS))
+        rows = assigned_updates(targets, inventory)
+        fields = [key for key in UPDATE_FIELDS if key in {"date", "variable"} or any(key in row for row in rows)]
+    exclusions_path = args.exclusions or reports / f"{output.stem}_exclusions{output.suffix}"
+    summary_path = args.summary or reports / f"{output.stem}_summary{output.suffix}"
+    tables.extend(
+        [
+            (exclusions_path, exclusions, exclusion_fields),
+            (summary_path, summary, SUMMARY_FIELDS),
+            (output, rows, fields),
+        ]
+    )
     sources = [args.rules, args.inventory, getattr(args, "holdouts", None)]
     if args.period:
         sources.extend([args.period / "period.yml", args.period.resolve().parent.parent / "evaluation.yml"])
@@ -90,10 +93,15 @@ def _select(args: argparse.Namespace) -> int:
     for path, _, _ in tables:
         if path.suffix.lower() not in {".csv", ".yaml", ".yml"}:
             raise ValueError(f"{path}: expected a CSV or YAML table")
+        if path.is_dir():
+            raise ValueError(f"{path}: output must be a file")
         if path.exists() and not args.overwrite:
             raise FileExistsError(f"{path} exists; choose a new filename or pass --overwrite")
     for path, records, headers in tables:
-        write_rows(path, records, fields=headers, overwrite=args.overwrite)
+        write_rows(
+            path, records, fields=headers, overwrite=args.overwrite,
+            sparse=args.planner_action == "generate" and path == output,
+        )
     for row in summary:
         print(
             f"{row['variable']} ({row['period_start']} to {row['period_end']}): "
@@ -106,7 +114,8 @@ def _select(args: argparse.Namespace) -> int:
 def _plot_panels(config_path: Path, output: Path, title: str | None) -> None:
     from openamundsen_da.util.yaml_utils import read_yaml_mapping
 
-    from .tables import read_rows, read_schedule
+    from .discovery import read_plot_schedule
+    from .tables import read_rows
     from .timeline import TimelinePanel, plot_timelines
 
     config = read_yaml_mapping(config_path, error_cls=ValueError, context="Timeline configuration")
@@ -128,7 +137,7 @@ def _plot_panels(config_path: Path, output: Path, title: str | None) -> None:
     for name, directory in config["panels"].items():
         root = config_path.parent / directory
         schedules = {
-            label: read_schedule(root / filename)[1]
+            label: read_plot_schedule(root / filename)[1]
             for label, filename in config["schedules"].items()
         }
         withheld = read_rows(root / config["withheld"]) if "withheld" in config else []
@@ -137,7 +146,8 @@ def _plot_panels(config_path: Path, output: Path, title: str | None) -> None:
 
 
 def _plot(args: argparse.Namespace) -> int:
-    from .tables import read_rows, read_schedule
+    from .discovery import read_plot_schedule
+    from .tables import read_rows
     from .timeline import plot_timeline
 
     if args.panels or args.schedule:
@@ -162,7 +172,7 @@ def _plot(args: argparse.Namespace) -> int:
         schedules = {}
         for spec in args.schedule:
             label, sep, filename = spec.partition("=")
-            default_label, rows = read_schedule(Path(filename if sep else label))
+            default_label, rows = read_plot_schedule(Path(filename if sep else label))
             name = label if sep and label else default_label
             if name in schedules:
                 raise ValueError(f"duplicate plotted schedule label {name!r}")

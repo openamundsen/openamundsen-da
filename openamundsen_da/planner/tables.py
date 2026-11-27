@@ -90,6 +90,7 @@ def write_rows(
     *,
     fields: Sequence[str] | None = None,
     overwrite: bool = False,
+    sparse: bool = False,
 ) -> None:
     """Publish a complete table atomically, preserving an existing file by default."""
     path = Path(path)
@@ -102,7 +103,7 @@ def write_rows(
     for index, row in enumerate(records, 1):
         if row.keys() - set(headers):
             raise ValueError(f"{path}: row {index} contains fields outside the supplied header")
-        cells.append({key: _cell(row.get(key)) for key in headers})
+        cells.append({key: _cell(row.get(key)) for key in headers if not sparse or key in row})
     path.parent.mkdir(parents=True, exist_ok=True)
     with NamedTemporaryFile(mode="w", encoding="utf-8", newline="", dir=path.parent, delete=False) as stream:
         temporary = Path(stream.name)

@@ -176,11 +176,83 @@ def load_schedule_rules(
     return compile_period_rules(read_rows(path), year, period)
 
 
-def load_evaluation_rules(path: Path, period: PlanningPeriod) -> list[Rule]:
-    """Compile the shared evaluation table for a planning period."""
+def _evaluation_settings(raw, where):
+    if not isinstance(raw, dict):
+        raise ValueError(f"{where}: expected a mapping")
+    options = _settings({key: value for key, value in raw.items() if key != "count_by_year"}, where)
+    fields = {"period_start", "period_end", "count", "year", "strategy", "ranking"}
+    for key in options:
+        if key not in fields and not key.startswith(("min_", "max_")):
+            raise ValueError(f"{where}: unexpected evaluation field {key!r}")
+    if "count_by_year" in raw:
+        counts = raw["count_by_year"]
+        if not isinstance(counts, dict) or not counts:
+            raise ValueError(f"{where}.count_by_year: expected a nonempty mapping of start years to counts")
+        normalized = {}
+        for key, value in counts.items():
+            token = str(key)
+            if not token.isascii() or not token.isdigit() or not 1 <= int(token) <= 9999:
+                raise ValueError(f"{where}.count_by_year: invalid calendar year {key!r}")
+            year = int(token)
+            if year in normalized:
+                raise ValueError(f"{where}.count_by_year: duplicate year {year}")
+            normalized[year] = value
+        options["count_by_year"] = normalized
+    return options
+
+
+def _evaluation_rows(document):
+    if document.keys() != {"evaluation"}:
+        raise ValueError("expected evaluation at the root of grouped evaluation rules")
+    evaluation = document["evaluation"]
+    if not isinstance(evaluation, dict) or not evaluation.keys() - {"defaults"}:
+        raise ValueError("evaluation must map at least one variable to its rules")
+    defaults = _evaluation_settings(evaluation.get("defaults", {}), "evaluation.defaults")
+    for variable, observation in evaluation.items():
+        if variable == "defaults":
+            continue
+        context = f"evaluation.{variable}"
+        if not isinstance(observation, dict):
+            raise ValueError(f"{context}: expected a mapping")
+        options = _evaluation_settings({k: v for k, v in observation.items() if k != "intervals"}, context)
+        intervals = observation.get("intervals", [{}])
+        if not isinstance(intervals, list) or not intervals:
+            raise ValueError(f"{context}.intervals: expected a nonempty sequence of intervals")
+        for index, raw_interval in enumerate(intervals, 1):
+            interval = _evaluation_settings(raw_interval, f"{context}.intervals[{index}]")
+            rule = {**defaults, **options, **interval, "purpose": "evaluation", "variable": variable}
+            if "count_by_year" not in rule:
+                yield rule
+                continue
+            if "count" in rule or "year" in rule:
+                raise ValueError(f"{context}: count_by_year cannot be combined with count or year")
+            for year, count in rule.pop("count_by_year").items():
+                yield dict(rule, year=year, count=count)
+
+
+def load_evaluation_rules(
+    path: Path, period: PlanningPeriod | None = None, *, year: int | None = None
+) -> list[Rule]:
+    """Compile grouped or flat holdout rules for a declared period or an explicit start year."""
+    path = Path(path)
+    if year is None:
+        if period is None:
+            raise ValueError("evaluation rules require a planning period or start year")
+        year = period.start.year
+    if path.suffix.lower() in {".yaml", ".yml"}:
+        try:
+            with path.open(encoding="utf-8-sig") as stream:
+                document = YAML(typ="safe").load(stream)
+            if isinstance(document, dict):
+                return compile_period_rules(_evaluation_rows(document), year, period, allow_empty=True)
+        except (ValueError, YAMLError) as exc:
+            raise ValueError(f"{path}: {exc}") from exc
     rows = read_rows(path)
+    if period is None:
+        # Explicit legacy tables may supply assimilation rules that contribute evaluation limits.
+        return compile_rules(rows, year)
     if not rows:
         raise ValueError(f"{path}: expected at least one evaluation rule")
     if any(row.get("purpose") != "evaluation" for row in rows):
         raise ValueError(f"{path}: shared evaluation rules must all have purpose evaluation")
-    return compile_period_rules(rows, period.start.year, period, allow_empty=True)
+    return compile_period_rules(rows, year, period, allow_empty=True)

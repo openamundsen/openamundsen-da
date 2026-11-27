@@ -132,21 +132,29 @@ threshold, apply the updated rules to the stored measurements.
 
 ## Reserve observations for evaluation
 
-Add an optional `evaluation.yml` at the planner root to define evaluation rules
-as a YAML sequence. Include screening thresholds for evaluation in these rules.
-Each period gets one shared `withheld.yml` regardless of how many schedules
-you compare. Use `year` on a rule to apply it only to periods starting in
-that year.
+Use the optional `evaluation.yml` at the planner root to reserve observations
+for all schedules in each period. Group rules by observation type under
+`evaluation`. Shared thresholds and spacing can be set once under `defaults`.
+Each variable can set its own values and define multiple selection intervals.
+Use a scalar `count` for every period or `count_by_year` to specify the
+requested count for each listed period start year.
 
 ```yaml
-- purpose: evaluation
-  variable: scf
-  period_start: '1-04-01'
-  period_end: '1-06-30'
-  strategy: best_per_month
-  count: 3
-  min_spacing_days: 14
-  min_support_coverage_ratio: 0.1
+evaluation:
+  defaults:
+    min_spacing_days: 14
+    min_support_coverage_ratio: 0.1
+  scf:
+    intervals:
+      - {period_start: '0-10-01', period_end: '0-12-31', strategy: best, count: 1}
+      - {period_start: '1-04-01', period_end: '1-06-30', strategy: best_per_month, count: 3}
+  wet_snow_line:
+    period_start: '1-02-15'
+    period_end: '1-06-30'
+    strategy: spread
+    count_by_year: {2019: 2, 2020: 2, 2021: 1, 2022: 2}
+    min_n_wet: 50
+    min_wet_bands: 1
 ```
 
 Use `best` to reserve a requested count of high-quality observations,
@@ -172,10 +180,26 @@ openamundsen-da planner plot --period "$period"
 openamundsen-da planner plot --planner-dir "$planner"
 ```
 
-Each schedule is written to `schedules/<name>.yml` inside its period. Review the
-companion `<name>_summary.yml` and `<name>_exclusions.yml` tables in `reports/`
-to see counts and why observations were ineligible. The withheld observations
-have corresponding `withheld_summary.yml` and `withheld_exclusions.yml` reports.
+Each `schedules/<name>.yml` is a chronological list of assigned updates using
+the same entries as `data_assimilation.assimilation_events` in the project.
+Edit this file to change the observations used by the project. Each entry has a
+date and variable. Satellite entries retain known acquisition times. Source IDs
+identify otherwise ambiguous acquisitions, and station IDs specify a selected subset.
+
+```yaml
+- date: '2022-10-03'
+  variable: scf
+  observation_time: '2022-10-03T10:17:49.024000Z'
+- date: '2022-11-03'
+  variable: station_hs
+```
+
+The companion `reports/<name>_targets.yml` records the generation result for
+every requested target, including its selected date or reason for a miss,
+candidate counts and quality diagnostics. The report preserves the original
+generation result after a manual edit. The summary and exclusions tables give
+counts, spacing and excluded observations. Withheld observations have their
+own summary and exclusions tables.
 Generation protects existing tables until you explicitly request replacement
 with `--overwrite`.
 
@@ -186,7 +210,7 @@ or `plot` with no input flags. The combined figure is written to
 target count across periods with that schedule, then by filename. Use
 `--title` to set the figure title or `--output` to write to another path.
 Parentheses give the count of assigned updates or withheld observations.
-Crosses mark missed targets. The plot also reads handwritten schedule files
+Crosses use the requested dates from the target report and reflect the current schedule assignments. Without a target report, a compact file shows its assigned updates. The plot also reads handwritten schedule files
 from each period's `schedules/` directory.
 
 For a custom set of panels, use
@@ -248,6 +272,9 @@ requirements and reports which timing and frequency checks it could apply.
 
 The planner also accepts standalone CSV or YAML tables through explicit paths.
 Use `--rules`, `--inventory`, `--year` and `--output` for selection with flat
-rules. Use `--withheld` to supply shared evaluation observations when generating,
-validating or plotting. For a plot from selected files, repeat
-`--schedule [LABEL=]FILE` and set `--output`.
+rules. The `holdouts` command also accepts grouped evaluation rules with
+explicit `period_start` and `period_end`. Standalone generation writes the
+target report beside the compact schedule. The planner can still read older
+schedules containing full target rows. Use `--withheld` to supply shared
+evaluation observations when generating, validating or plotting. For a plot
+from selected files, repeat `--schedule [LABEL=]FILE` and set `--output`.

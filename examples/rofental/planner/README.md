@@ -2,7 +2,7 @@
 
 Start with the [2022/23 monthly schedule](periods/2022_2023/schedules/monthly.yml) and its [withheld observations](periods/2022_2023/withheld.yml). The [monthly](schedules/monthly/rules.yml), [14-day](schedules/14-day/rules.yml) and [7-day](schedules/7-day/rules.yml) rules apply across winters. The [evaluation rules](evaluation.yml) reserve observations for use with all three schedules.
 
-Each winter under `periods/` contains its dates and display label in `period.yml`, its candidate observations in `inventory.yml` and its shared evaluation list in `withheld.yml`. The dated tables under `schedules/` give one row per target, including the reason for any missed target. The tables under `reports/` summarize counts and spacing and identify acquisitions or station dates excluded by the rules. [Counts by winter, schedule and variable](schedule_counts.yml)
+Each winter under `periods/` contains its dates and display label in `period.yml`, its candidate observations in `inventory.yml` and its shared evaluation list in `withheld.yml`. The files under `schedules/` are chronological lists of assigned updates in project YAML format. Compare the [2022/23 monthly schedule](periods/2022_2023/schedules/monthly.yml) with its [target report](periods/2022_2023/reports/monthly_targets.yml) for the requested dates, acquisition choices and reasons for missed targets. The other reports summarize counts, spacing and excluded observations. [Counts by winter, schedule and variable](schedule_counts.yml)
 
 The [four-winter timeline](timeline.png) compares the schedules on the same October–June axis. The 2 × 2 figure prints at 185 × 103 mm. The individual timelines below give each winter the full publication width.
 
@@ -24,13 +24,13 @@ openamundsen-da planner plot --planner-dir . \
 
 Optical fractional snow cover (SCF) targets run from October 1 through June 30, station snow depth (HS) from November 1 through the last day of February and radar wet-snow line altitude (WSLA) from February 15 through June 30. Each period starts its own sequence of targets. The timing tolerances are seven days for monthly targets, three days for 14-day targets and two days for weekly targets. Both stations must have usable snow depth at local model midnight. The satellite products require at least 10% valid catchment coverage. Radar additionally requires a retrievable line, at least 50 wet pixels and at least one wet elevation band.
 
-Within the timing tolerance, satellites are ranked by valid catchment support and stations by proximity to the target. On conflicting dates, radar takes priority over optical, followed by stations. All 12 schedules enable rescheduling. Five station updates moved by one day to accommodate optical acquisitions. The rows record their preferred and selected dates. The 2020/21 weekly station target on November 8 had no eligible pair of station measurements.
+Within the timing tolerance, satellites are ranked by valid catchment support and stations by proximity to the target. On conflicting dates, radar takes priority over optical, followed by stations. All 12 schedules enable rescheduling. Five station updates moved by one day to accommodate optical acquisitions. Their target reports record the preferred and selected dates. The 2020/21 weekly station target on November 8 had no eligible pair of station measurements.
 
 Each winter reserves one optical acquisition in October–December and one each in April, May and June. Radar holdouts are distributed across the eligible dates. Within each product the holdouts are at least 14 days apart. All 23 reserved acquisitions are excluded from every corresponding winter schedule. Five radar evaluations precede their schedule's first radar update, including both 2022/23 monthly radar holdouts. They can evaluate the schedule as a whole.
 
 Across 537 targets, 332 received an update and 205 were missed. The 413 satellite targets and 124 station targets reproduce the reviewed date-level selections, including all missed targets. All dates came from the rules without manual changes. Validation against the four winters' source observations passed for each of the twelve schedules.
 
-For the 2022/23 monthly project, preparation from a referenced CSV, a referenced YAML file and an equivalent inline list produced the same 14 assigned events, including observation times and contributing stations. All three produced 15 identical propagation windows and 25 byte-identical step YAML and satellite observation CSV files. This monthly schedule contains four station, nine optical and one radar update. The shipped tutorial project has its own eight-event schedule.
+For the 2022/23 monthly project, preparation from a referenced CSV, a referenced YAML file and an equivalent inline list produced the same 14 assimilation updates, including observation times and contributing stations. All three produced 15 identical propagation windows and 25 byte-identical step YAML and satellite observation CSV files. This monthly schedule contains four station, nine optical and one radar update. The shipped tutorial project has its own schedule of eight updates.
 
 ## Reproduce the schedules
 
@@ -60,6 +60,9 @@ From this directory, run the following Bash commands in the framework environmen
   done
   openamundsen-da planner plot --planner-dir . \
     --title "Rofental assimilation schedules and withheld observations"
+  for image in timeline.png periods/*/timeline.png; do
+    cmp "$reviewed/$image" "$image"
+  done
   echo "Reproduced schedules and figures in $out"
 )
 ```
@@ -85,7 +88,7 @@ observation_planner:
 
 ## Source observations
 
-The prepared inputs use the Rofental project's 100 m grid, land-cover mask and three-hour time step in fixed UTC+1. Station eligibility comes from the shipped Latschbloder and Proviantdepot hourly CSVs. Each selected station row lists its contributing stations. The inventory records the UTC timestamps of the readings used to match each model midnight.
+The prepared inputs use the Rofental project's 100 m grid, land-cover mask and three-hour time step in fixed UTC+1. Station eligibility comes from the shipped Latschbloder and Proviantdepot hourly CSVs. The target report lists the stations contributing to each selected update. The inventory records the UTC timestamps of the readings used to match each model midnight.
 
 The four-winter acquisition manifest records 228 optical and 116 radar rasters, together with the SHA-256 digests of each observation and uncertainty GeoTIFF. Optical acquisition times were matched by acquisition date and Sentinel-2 tile T32TPS to the Copernicus Data Space catalogue. Each date has one distinct acquisition time. Two dates have two processing versions at the same instant. The manifest records the matching product names and catalogue identifiers. Each radar time comes from the corresponding raster's metadata sidecar. These are product metadata timestamps in UTC. [Acquisition manifest](satellite_acquisition_times.csv)
 

@@ -2,6 +2,8 @@
 
 from datetime import date
 
+import pytest
+
 from openamundsen_da.cli import main
 from openamundsen_da.planner.tables import read_rows, write_rows
 
@@ -53,13 +55,81 @@ def test_generate_one_schedule_without_evaluation_and_preserve_edits(tmp_path):
     args = ["planner", "generate", "--period", str(project), "--schedule", "my-trial"]
     assert main(args) == 0
     selected = project / "schedules" / "my-trial.yml"
-    assert [row["target_date"] for row in read_rows(selected)] == ["2020-03-01", "2020-03-08"]
+    assert read_rows(selected) == []
+    targets = read_rows(project / "reports/my-trial_targets.yml")
+    assert [row["target_date"] for row in targets] == ["2020-03-01", "2020-03-08"]
+    assert all(row["status"] == "missed" and row["reason"] for row in targets)
+    export = tmp_path / "export" / "review.csv"
+    assert main([*args, "--output", str(export)]) == 0
+    assert export.read_text() == "date,variable\n"
+    assert read_rows(export.with_name("review_targets.csv")) == targets
     selected.write_text("# hand edit\n[]\n")
     assert main(args) == 1
     assert selected.read_text() == "# hand edit\n[]\n"
     (tmp_path / "evaluation.yml").write_text("[]\n")
     assert main([*args, "--overwrite"]) == 1
     assert selected.read_text() == "# hand edit\n[]\n"
+
+
+@pytest.mark.parametrize("suffix", [".yml", ".csv"])
+def test_compact_updates_preserve_acquisition_and_station_selections(tmp_path, suffix):
+    period = tmp_path / "periods" / "spring"
+    period.mkdir(parents=True)
+    (period / "period.yml").write_text("start: 2020-03-01\nend: 2020-03-10\n")
+    rules = tmp_path / "schedules" / "trial"
+    rules.mkdir(parents=True)
+    (rules / "rules.yml").write_text(
+        "defaults: {frequency: 4, tolerance_days: 1, reschedule: false}\n"
+        "observations: {scf: {priority: 1}, station_hs: {priority: 2}}\n"
+    )
+
+    def scene(day, hour, source, quality):
+        return dict(date=day, variable="scf", observation_time=f"{day}T{hour}:00:00Z",
+                    source_id=source, quality_for_ranking=quality)
+
+    def station(day, hour):
+        return dict(date=day, variable="station_hs", observation_time=f"{day}T{hour}:00:00Z",
+                    station_ids="a|b")
+
+    day1, day2, day5, day9 = (f"2020-03-{day:02d}" for day in (1, 2, 5, 9))
+    inventory = [
+        scene(day2, "08", "early.tif", 8), scene(day2, "09", "late.tif", 10),
+        scene(day5, "10", "west.tif", 4), scene(day5, "10", "east.tif", 2),
+        station(day1, "06"), station(day9, "06"), station(day9, "07"),
+    ]
+    write_rows(period / "inventory.csv", inventory)
+    withheld = [{**station(day9, "06"), "station_ids": "a"}]
+    write_rows(period / "withheld.yml", withheld)
+
+    output = period / "schedules" / f"trial{suffix}"
+    targets_path = period / "reports" / f"trial_targets{suffix}"
+    args = ["planner", "generate", "--period", str(period), "--schedule", "trial", "--output", str(output)]
+    assert main([*args, "--summary", str(targets_path), "--overwrite"]) == 1
+    assert not output.exists() and not targets_path.exists()
+    assert main(args) == 0
+    expected = [
+        {"date": day1, "variable": "station_hs"},
+        {"date": day2, "variable": "scf", "observation_time": f"{day2}T09:00:00Z"},
+        {"date": day5, "variable": "scf", "observation_time": f"{day5}T10:00:00Z", "source_id": "west.tif"},
+        {"date": day9, "variable": "station_hs", "observation_time": f"{day9}T06:00:00Z", "station_ids": "b"},
+    ]
+    actual = read_rows(output)
+    if suffix == ".csv":
+        assert output.read_text().splitlines()[0] == "date,variable,observation_time,source_id,station_ids"
+        actual = [{k: v for k, v in row.items() if v} for row in actual]
+    assert actual == expected
+    targets = read_rows(targets_path)
+    assert len(targets) == 6
+    assert [row["source_id"] for row in targets if row["variable"] == "scf"] == ["late.tif", "west.tif", ""]
+    assert [(row["status"], row["station_ids"]) for row in targets if row["variable"] == "station_hs"] == [
+        ("selected", "a|b"), ("missed", ""), ("selected", "b")
+    ]
+    targets_path.write_text("reviewed")
+    output.unlink()
+    assert main(args) == 1
+    assert not output.exists() and targets_path.read_text() == "reviewed"
+    assert main([*args, "--overwrite"]) == 0
+    assert read_rows(targets_path) == targets
 
 
 def test_plot_a_short_campaign_has_readable_dates_and_no_withheld_row(tmp_path, monkeypatch):

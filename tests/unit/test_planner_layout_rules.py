@@ -9,7 +9,7 @@ from ruamel.yaml import YAML
 
 from openamundsen_da.configuration import load_project_configuration
 from openamundsen_da.planner.layout import load_evaluation_rules, load_schedule_rules, read_period, schedule_rules_path, table_path
-from openamundsen_da.planner.tables import write_rows
+from openamundsen_da.planner.tables import read_rows, write_rows
 from openamundsen_da.planner.validation import validate_schedule
 
 
@@ -98,6 +98,16 @@ def test_folder_project_validates_reviewed_inputs_and_tracks_every_source(tmp_pa
     report = validate_schedule(project, period=period, schedule_name="monthly")
     assert not report.errors
     assert len(report.events) == 14
+    # The read-only report still lists the removed update; only the editable
+    # schedule determines which observations enter this project.
+    schedule_rows = read_rows(schedule)
+    removed, *retained = schedule_rows
+    write_rows(schedule, retained, overwrite=True)
+    report = validate_schedule(project)
+    assert not report.errors
+    assert [row["date"] for row in report.events] == [row["date"] for row in retained]
+    assert removed["date"] not in {row["date"] for row in report.events}
+    write_rows(schedule, schedule_rows, overwrite=True)
     report = validate_schedule(project, period=period, schedule_name="monthly", withheld=[])
     assert any("require the reviewed withheld table" in error for error in report.errors)
     # A standalone period takes precedence over references from a different project plan.

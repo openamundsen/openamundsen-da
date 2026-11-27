@@ -40,15 +40,23 @@ def test_reviewed_winter_is_reproducible(tmp_path, monkeypatch, year, reserved, 
         assert main(["planner", "generate", "--period", str(period), "--schedule", cadence]) == 0
         table = Path("schedules") / f"{cadence}.yml"
         assert (period / table).read_bytes() == (reviewed / table).read_bytes()
-        updates = [row for row in read_rows(period / table) if row["date"]]
+        updates = read_rows(period / table)
         assert len(updates) == count
-        assert not any(matches_holdout(row, excluded) for row in updates for excluded in held)
+        assert all(row["date"] and row["variable"] for row in updates)
+        assert all(set(row) <= {"date", "variable", "observation_time", "source_id", "station_ids"} for row in updates)
+        targets = read_rows(period / "reports" / f"{cadence}_targets.yml")
+        selected = [row for row in targets if row["date"]]
+        assert [(row["date"], row["variable"]) for row in updates] == sorted(
+            (row["date"], row["variable"]) for row in selected
+        )
+        assert not any(matches_holdout(row, excluded) for row in selected for excluded in held)
 
     reports = {
         f"{name}_{kind}.yml"
         for name in ("withheld", *CADENCES)
         for kind in ("summary", "exclusions")
     }
+    reports.update(f"{name}_targets.yml" for name in CADENCES)
     assert {p.name for p in (period / "reports").iterdir()} == reports
     for filename in reports:
         report = Path("reports") / filename
@@ -89,6 +97,12 @@ def test_four_panel_timeline_matches_reviewed_winter_plots(monkeypatch):
             assert [num2date(value).date() for value in axis.get_xlim()] == [
                 date(year, 10, 1), date(year + 1, 7, 1)
             ]
+            targets = [
+                row for cadence in CADENCES for row in read_rows(
+                    PLANNER / "periods" / f"{year}_{year + 1}" / "reports" / f"{cadence}_targets.yml"
+                )
+            ]
+            assert sum(len(group.get_offsets()) for group in axis.collections) == len(targets) + withheld
             labels = [label.get_text() for label in axis.get_yticklabels()]
             assert labels == single_rows[year]
             assert labels == [

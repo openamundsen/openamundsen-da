@@ -253,13 +253,15 @@ def test_csv_yaml_round_trip_through_cli_and_editable_plot(tmp_path, monkeypatch
             str(schedule),
         ]
         assert main(generate) == 0
-        selections.append((read_rows(holds), read_rows(schedule)))
+        selections.append((read_rows(holds), read_rows(schedule), read_rows(tmp_path / f"events_targets.{suffix}")))
+        assert not (tmp_path / f"held_targets.{suffix}").exists()
         assert main(generate) == 1
         assert main([*generate, "--overwrite"]) == 0
     assert selections[0] == selections[1]
-    held, rows = selections[0]
+    held, rows, targets = selections[0]
     assert held[0]["date"] == "2020-01-02"
-    assert [(r["target_date"], r["date"]) for r in rows] == [("2020-01-01", "2020-01-01"), ("2020-01-08", "")]
+    assert rows == [{"date": "2020-01-01", "variable": "scf"}]
+    assert [(r["target_date"], r["date"]) for r in targets] == [("2020-01-01", "2020-01-01"), ("2020-01-08", "")]
 
     from matplotlib.dates import date2num
     from openamundsen_da.methods.viz import common
@@ -303,8 +305,11 @@ def test_csv_yaml_round_trip_through_cli_and_editable_plot(tmp_path, monkeypatch
     assert main(["planner", "plot", "--schedule", str(schedule), "--output", str(plot)]) == 0
     labels, points, bounds = rendered[-1]
     assert labels == [f"{schedule.stem} (1)", "Withheld (0)"]
-    assert points == [[[date2num(date(2020, 2, 20)), 0]]]
-    assert bounds[1] - bounds[0] == 29
+    assert points == [
+        [[date2num(date(2020, 1, 1)), 0], [date2num(date(2020, 1, 8)), 0]],
+        [[date2num(date(2020, 2, 20)), 0]],
+    ]
+    assert bounds[1] - bounds[0] == 60
 
 
 def test_spacing_across_periods_and_no_quality_candidates():
@@ -411,3 +416,26 @@ def test_plot_panels_reads_project_tables_relative_to_config(tmp_path, monkeypat
     config.write_text("panels: []\nschedules: {}\n")
     assert main(args) == 1
     assert len(calls) == 1
+
+
+def test_plot_missed_dates_follow_current_schedule_and_target_report(tmp_path):
+    from openamundsen_da.planner.discovery import read_plot_schedule
+
+    schedule = tmp_path / "schedules" / "trial.yml"
+    report = tmp_path / "reports" / "trial_targets.csv"
+    write_rows(report, [
+        {"variable": "scf", "target_date": "2020-06-01", "date": "2020-06-02", "tolerance_days": "2"},
+        {"variable": "scf", "target_date": "2020-06-08", "date": "", "tolerance_days": "2"},
+    ])
+    write_rows(schedule, [{"date": "2020-06-09", "variable": "scf"}])
+    label, rows = read_plot_schedule(schedule)
+    assert label == "trial"
+    assert rows == [
+        {"variable": "scf", "target_date": "2020-06-01"},
+        {"date": "2020-06-09", "variable": "scf"},
+    ]
+    write_rows(schedule, [], overwrite=True)
+    assert [r["target_date"] for r in read_plot_schedule(schedule)[1]] == ["2020-06-01", "2020-06-08"]
+    write_rows(report, [{"variable": "scf", "target_date": "2020-06-01"}], overwrite=True)
+    with pytest.raises(ValueError, match=r"trial_targets.csv.*tolerance_days"):
+        read_plot_schedule(schedule)

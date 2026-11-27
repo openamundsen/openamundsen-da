@@ -7,6 +7,7 @@ import math
 from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import date, datetime, time, timedelta
+from functools import cache
 from pathlib import Path
 
 import pandas as pd
@@ -267,14 +268,16 @@ def _parse_row(raw, index, project, report, *, withheld=False):
     return row
 
 
-def _identify(row, matches):
+def _matches_acquisition(row, item):
     source = row.get("source_id")
     stamp = _timestamp(row.get("observation_time"))
-    candidates = [
-        item for item in matches
-        if (not source or _value(item, "source_id") == source)
-        and (not stamp or _timestamp(_value(item, "observation_time")) == stamp)
-    ]
+    return (not source or _value(item, "source_id") == source) and (
+        not stamp or _timestamp(_value(item, "observation_time")) == stamp
+    )
+
+
+def _identify(row, matches):
+    candidates = [item for item in matches if _matches_acquisition(row, item)]
     if len(candidates) != 1:
         available = ", ".join(f"{item.get('source_id')} ({_value(item, 'observation_time') or 'time unknown'})"
                               for item in matches)
@@ -290,7 +293,7 @@ def _identify(row, matches):
     return observation
 
 
-def _rule_for(row, rules, report, label):
+def _rule_for(row, rules, report, label, replay_targets):
     from openamundsen_da.planner.selection import target_dates
 
     actual = _day(row["date"]) if row.get("date") else None
@@ -311,9 +314,17 @@ def _rule_for(row, rules, report, label):
         if not nearest:
             report.errors.append(f"{label} target_date: period contains no targets")
             return rule, None
-        if len(nearest) > 1 and abs(nearest[0] - actual) == abs(nearest[1] - actual):
-            report.errors.append(f"{label} target_date: equally near {nearest[0]} and {nearest[1]}; specify one")
-        target = nearest[0]
+        if len(nearest) > 1 and abs((nearest[1] - actual).days) <= rule.tolerance_days:
+            # Quality ranking, spacing or conflicts can select this observation for
+            # a target other than the nearest one. Recover only its calendar target.
+            original = replay_targets().get((row["variable"], row["date"]))
+            if original is not None and _matches_acquisition(row, original):
+                if not row.get("station_ids") or set(_ids(row["station_ids"])) == set(_ids(original["station_ids"])):
+                    target = _day(original["target_date"])
+        if not target:
+            if len(nearest) > 1 and abs(nearest[0] - actual) == abs(nearest[1] - actual):
+                report.errors.append(f"{label} target_date: equally near {nearest[0]} and {nearest[1]}; specify one")
+            target = nearest[0]
     if actual:
         offset = (actual - target).days
         if abs(offset) > rule.tolerance_days:
@@ -517,6 +528,20 @@ def validate_schedule(project_dir, *, schedule=None, inventory=None, rules=None,
         except (ValueError, OSError, KeyError, TypeError) as exc:
             report.errors.append(f"inventory: {exc}")
             return report
+
+    @cache
+    def replay_targets():
+        if shared is None:
+            return {}
+        from openamundsen_da.planner.selection import generate_schedule
+
+        try:
+            generated = generate_schedule(inventory_rows, active, chosen, [row for _, row in reserved])
+        except ValueError as exc:
+            report.errors.append(f"cannot resolve overlapping schedule targets: {exc}")
+            return {}
+        return {(row["variable"], row["date"]): row for row in generated if row["date"]}
+
     current = _observations(project_dir, start, end, requested, report)
     actual = {_day(row["date"]) for _, row in selected if row.get("date")}
     try:
@@ -540,9 +565,10 @@ def validate_schedule(project_dir, *, schedule=None, inventory=None, rules=None,
                 for field_name in ("date", "target_date"):
                     if row.get(field_name) and not plan.start <= _day(row[field_name]) <= plan.end:
                         report.errors.append(f"{label} {field_name}: outside planning period {plan.start} through {plan.end}")
-            rule, target = None, None
+            rule = None
+            target = _day(row["target_date"]) if row.get("target_date") else None
             if active and not is_withheld:
-                rule, target = _rule_for(row, active, report, label)
+                rule, target = _rule_for(row, active, report, label, replay_targets)
                 if target:
                     key = (variable, target)
                     if key in assigned:
@@ -551,7 +577,7 @@ def validate_schedule(project_dir, *, schedule=None, inventory=None, rules=None,
             if not row["date"]:
                 report.warnings.append(f"{label} date: missed target {row['target_date']}")
                 continue
-            if row.get("target_date") and not start <= _day(row["target_date"]) <= end:
+            if target and not start <= target <= end:
                 report.errors.append(f"{label} target_date: outside project period {start} through {end}")
             day = _day(row["date"])
             if not start <= day <= end:

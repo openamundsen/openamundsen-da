@@ -1,60 +1,21 @@
-- purpose: evaluation
-  variable: scf
-  period_start: 0-10-01
-  period_end: 0-12-31
-  min_spacing_days: 14
-  strategy: best
-  count: 1
-  min_support_coverage_ratio: 0.1
-- purpose: evaluation
-  variable: scf
-  period_start: 1-04-01
-  period_end: 1-06-30
-  min_spacing_days: 14
-  strategy: best_per_month
-  count: 3
-  min_support_coverage_ratio: 0.1
-- purpose: evaluation
-  variable: wet_snow_line
-  period_start: 1-02-15
-  period_end: 1-06-30
-  min_spacing_days: 14
-  strategy: spread
-  count: 2
-  year: 2019
-  min_support_coverage_ratio: 0.1
-  min_n_wet: 50
-  min_wet_bands: 1
-- purpose: evaluation
-  variable: wet_snow_line
-  period_start: 1-02-15
-  period_end: 1-06-30
-  min_spacing_days: 14
-  strategy: spread
-  count: 2
-  year: 2020
-  min_support_coverage_ratio: 0.1
-  min_n_wet: 50
-  min_wet_bands: 1
-- purpose: evaluation
-  variable: wet_snow_line
-  period_start: 1-02-15
-  period_end: 1-06-30
-  min_spacing_days: 14
-  strategy: spread
-  count: 1
-  year: 2021
-  min_support_coverage_ratio: 0.1
-  min_n_wet: 50
-  min_wet_bands: 1
-- purpose: evaluation
-  variable: wet_snow_line
-  period_start: 1-02-15
-  period_end: 1-06-30
-  min_spacing_days: 14
-  strategy: spread
-  count: 2
-  year: 2022
-  min_support_coverage_ratio: 0.1
-  min_n_wet: 50
-  min_wet_bands: 1
+evaluation:
+  defaults:
+    min_spacing_days: 14
+    min_support_coverage_ratio: 0.1
+  scf:
+    intervals:
+      - period_start: 0-10-01
+        period_end: 0-12-31
+        strategy: best
+        count: 1
+      - period_start: 1-04-01
+        period_end: 1-06-30
+        strategy: best_per_month
+        count: 3
+  wet_snow_line:
+    period_start: 1-02-15
+    period_end: 1-06-30
+    strategy: spread
+    count_by_year: {2019: 2, 2020: 2, 2021: 1, 2022: 2}
+    min_n_wet: 50
+    min_wet_bands: 1
