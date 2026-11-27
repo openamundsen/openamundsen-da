@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 import importlib.util
+import os
 import re
+import shutil
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -163,7 +166,7 @@ def test_native_pip_rofental_is_a_ci_and_release_gate() -> None:
     release_job = release_workflow[release_start:release_end]
 
     for job in (ci_job, release_job):
-        assert "runs-on: [self-hosted, linux, x64, oa-da]" in job
+        assert "runs-on: [self-hosted, linux, x64, oa-da-native]" in job
         assert 'python-version: "3.12"' in job
         assert "bash scripts/ci/run_native_integration_tests.sh" in job
         assert "OA_DA_TEST_SETUP_RESOLUTION=500" in job
@@ -196,6 +199,54 @@ def test_native_pip_rofental_is_a_ci_and_release_gate() -> None:
     assert "openamundsen==1.2.1" in constraints
     assert "openamundsen-da" not in constraints
     assert "prune constraints" in manifest
+
+
+@pytest.mark.skipif(shutil.which("bash") is None, reason="CI gate runs in Bash")
+@pytest.mark.parametrize(
+    ("draft", "event", "ref", "docs_only", "override", "expected"),
+    [
+        (True, "pull_request", "refs/pull/42/merge", False, {}, True),
+        (True, "pull_request", "refs/pull/42/merge", False, {"DRAFT_UNIT_RESULT": "failure"}, False),
+        (False, "pull_request", "refs/pull/42/merge", False, {}, True),
+        (False, "pull_request", "refs/pull/42/merge", False, {"NATIVE_RESULT": "skipped"}, False),
+        (False, "pull_request", "refs/pull/42/merge", False, {"TRUSTED_RESULT": "cancelled"}, False),
+        (False, "pull_request", "refs/pull/42/merge", False, {"CONTAINER_RESULT": "failure"}, False),
+        (False, "pull_request", "refs/pull/42/merge", False, {"DEPENDENCY_RESULT": "failure"}, False),
+        (False, "pull_request", "refs/pull/42/merge", True, {}, True),
+        (False, "push", "refs/heads/main", False, {"EDGE_RESULT": "skipped"}, False),
+        (False, "push", "refs/heads/main", False, {}, True),
+        (False, "schedule", "refs/heads/main", False, {}, True),
+        (False, "push", "refs/heads/gmd-revision", False, {}, True),
+    ],
+)
+def test_merge_gate_validates_expected_jobs(draft, event, ref, docs_only, override, expected):
+    workflow = yaml.load(CI_WORKFLOW.read_text(encoding="utf-8"), Loader=yaml.BaseLoader)
+    gate = workflow["jobs"]["ci-gate"]
+    assert gate["name"] == "${{ github.event.pull_request.draft && 'Draft CI gate' || 'CI gate' }}"
+    assert "ready_for_review" in workflow["on"]["pull_request"]["types"]
+    step = gate["steps"][0]
+    full = "success" if not (draft or docs_only) else "skipped"
+    standard = "skipped" if docs_only else "success"
+    env = {
+        **os.environ,
+        "DRAFT": str(draft).lower(),
+        "EVENT_NAME": event,
+        "GITHUB_REF": ref,
+        "DOCS_ONLY": str(docs_only).lower(),
+        "SCOPE_RESULT": "success",
+        "DOCS_RESULT": "success",
+        "LINT_RESULT": standard,
+        "PACKAGE_RESULT": standard,
+        "DRAFT_UNIT_RESULT": "success" if draft and not docs_only else "skipped",
+        "PORTABLE_RESULT": full,
+        "CONTAINER_RESULT": full,
+        "TRUSTED_RESULT": full,
+        "NATIVE_RESULT": full,
+        "DEPENDENCY_RESULT": "success" if event == "pull_request" else "skipped",
+        "EDGE_RESULT": full if event == "push" and ref == "refs/heads/main" else "skipped",
+        **override,
+    }
+    assert (subprocess.run([shutil.which("bash"), "-c", step["run"]], env=env, check=False).returncode == 0) is expected
 
 
 def test_release_workflow_verifies_published_manifest_digest_from_raw_bytes() -> None:
@@ -277,7 +328,6 @@ def test_ci_docs_only_scope_is_narrow_and_full_ci_is_the_fallback() -> None:
     assert "python scripts/ci/classify_changes.py --force-full" in workflow
     assert "git diff --name-only --no-renames" in workflow
     assert "if: needs.change-scope.outputs.docs_only != 'true'" in workflow
-    assert "name: CI gate" in workflow
     assert "test \"${TRUSTED_RESULT}\" = success" in workflow
     assert "test \"${NATIVE_RESULT}\" = success" in workflow
 
