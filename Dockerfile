@@ -1,10 +1,5 @@
-FROM mambaorg/micromamba:1.5.8@sha256:475730daef12ff9c0733e70092aeeefdf4c373a584c952dac3f7bdb739601990
+FROM mambaorg/micromamba:1.5.8@sha256:475730daef12ff9c0733e70092aeeefdf4c373a584c952dac3f7bdb739601990 AS dependencies
 LABEL org.opencontainers.image.source="https://github.com/openamundsen/openamundsen-da"
-
-ARG VCS_REF="unknown"
-ARG VERSION="0+unknown"
-LABEL org.opencontainers.image.revision="${VCS_REF}"
-LABEL org.opencontainers.image.version="${VERSION}"
 
 # Allow `micromamba run -n <env>` directly as entrypoint
 ARG MAMBA_DOCKERFILE_ACTIVATE=1
@@ -29,6 +24,8 @@ USER root
 RUN mkdir -p /cache/xdg /cache/mamba/pkgs /cache/mpl && \
     chmod -R 0777 /cache
 
+FROM dependencies AS runtime
+
 # Release execution uses only the mounted setup and the installed distribution.
 WORKDIR /data
 
@@ -45,3 +42,8 @@ COPY examples/rofental /workspace/examples/rofental
 # Lightweight entrypoint to clear stale mamba locks and run inside env
 COPY scripts/oa_entrypoint.sh /usr/local/bin/oa_entrypoint.sh
 ENTRYPOINT ["/usr/local/bin/oa_entrypoint.sh"]
+
+ARG VCS_REF="unknown"
+ARG VERSION="0+unknown"
+LABEL org.opencontainers.image.revision="${VCS_REF}"
+LABEL org.opencontainers.image.version="${VERSION}"
